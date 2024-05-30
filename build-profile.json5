@@ -1,0 +1,50 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/wh/.ohos/config/default_MyHongMengApplication_MJ3691nOwgt4GikA5VtFuPXVEYAWRRt6xF3C00LSCZA=.cer",
+          "storePassword": "0000001BBA14AF0A091CFD0F48D3969D0F6E43312D79ED31971BF041D4BD1228EE393FA81A2C130BD873D8",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001BF73F290BE58A45197973DE34A365BDF67905B17831F25058B3D510FDD16E8C2F3E35185522E465",
+          "profile": "/Users/wh/.ohos/config/default_MyHongMengApplication_MJ3691nOwgt4GikA5VtFuPXVEYAWRRt6xF3C00LSCZA=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/wh/.ohos/config/default_MyHongMengApplication_MJ3691nOwgt4GikA5VtFuPXVEYAWRRt6xF3C00LSCZA=.p12"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compileSdkVersion": "4.1.0(11)",
+        "compatibleSdkVersion": "4.1.0(11)",
+        "runtimeOS": "HarmonyOS",
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}
