@@ -5,8 +5,16 @@
       "value": "#FFFFFF"
     },
     {
-      "name": "colorPrimary",
-      "value": "#1DE9B6"
+      "name": "white",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "light_gray",
+      "value": "#f1f3f5"
+    },
+    {
+      "name": "backgrounder",
+      "value": "#FFF8F6F6"
     }
   ]
 }
