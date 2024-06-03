@@ -58,11 +58,15 @@ struct Index {
 
                     Row({space : 10}){
                       Text('' + item.rssi).fontSize(14)
-                      Button('连接')
-                        .width(90)
-                        .height(40)
-                        .fontSize(12)
-                        .onClick(()=>{})
+                      Navigator({ target: 'pages/ClientDetail', type: NavigationType.Push }){
+                        Button('连接')
+                          .width(90)
+                          .height(40)
+                          .fontSize(12)
+                          //.onClick(()=>{})
+                      }
+                      .params(item)
+
                     }
                     .padding({ left: 0, right: 10, top: 0, bottom: 0 })
 
