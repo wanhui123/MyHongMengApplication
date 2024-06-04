@@ -121,7 +121,7 @@ struct ClientDetail {
         }
         .itemStyle()
 
-        //获取所有服务
+        //获取所有服务（同时setNotification）
         Column({ space: 10 }) {
           Button('服务发现').onClick(() => {
             this.getServices()
@@ -140,27 +140,7 @@ struct ClientDetail {
         }
         .itemStyle()
 
-        //读取指定通道（通道1）的特征
-        Column({ space: 10 }) {
-          Button('client端读取蓝牙低功耗设备特定服务的特征值').onClick(() => {
-            this.readCharacteristicValue()
-          })
-
-          Scroll() {
-            if (this.characteristicValue) {
-              Text(JSON.stringify(this.characteristicValue))
-            } else {
-              Text('暂无数据')
-            }
-          }
-          .height(50)
-          .scrollBar(BarState.Off)
-        }
-        .itemStyle()
-
-
-
-        //特征值变化事件
+        //特征值变化事件（接收设备内容）
         Column({ space: 10 }) {
           Row() {
             Text('特征值变化事件')
@@ -191,6 +171,24 @@ struct ClientDetail {
             }
           }
           .height(100)
+          .scrollBar(BarState.Off)
+        }
+        .itemStyle()
+
+        //读取指定通道（通道1）的特征
+        Column({ space: 10 }) {
+          Button('client端读取蓝牙低功耗设备特定服务的特征值').onClick(() => {
+            this.readCharacteristicValue()
+          })
+
+          Scroll() {
+            if (this.characteristicValue) {
+              Text(JSON.stringify(this.characteristicValue))
+            } else {
+              Text('暂无数据')
+            }
+          }
+          .height(50)
           .scrollBar(BarState.Off)
         }
         .itemStyle()
@@ -301,10 +299,10 @@ struct ClientDetail {
       const result: Array<ble.GattService> = await this.gattClient.getServices();
       console.info('getServices successfully:' + JSON.stringify(result));
 
+      let gatt = this.gattClient;
+
       for (const item of result) {
         console.info('getServices item= ' + JSON.stringify(item));
-
-        let gatt = this.gattClient;
 
         // 通道1
         if (item.serviceUuid === UART_SERVICE_UUID) {
@@ -313,7 +311,12 @@ struct ClientDetail {
           console.log(`getServices 通道1 characteristic = '${characteristic?.characteristicUuid}'`);
           // setNotification
           if (characteristic) {
-            await this.setNotificationChannel(gatt, item, characteristic, true);
+            const success = await this.setNotificationChannel(gatt, item, characteristic, true);
+            if (success) {
+              console.log(`Notification set successfully for characteristic（通道1） ${characteristic.characteristicUuid}`);
+            } else {
+              console.log(`Failed to set notification for characteristic（通道1） ${characteristic.characteristicUuid}`);
+            }
           }
         }
         // 通道2
@@ -323,7 +326,12 @@ struct ClientDetail {
           console.log(`getServices 通道2 characteristic = '${characteristic?.characteristicUuid}'`);
           // setNotification
           if (characteristic) {
-            await this.setNotificationChannel(gatt, item, characteristic, true);
+            const success = await this.setNotificationChannel(gatt, item, characteristic, true);
+            if (success) {
+              console.log(`Notification set successfully for characteristic（通道2） ${characteristic.characteristicUuid}`);
+            } else {
+              console.log(`Failed to set notification for characteristic（通道2） ${characteristic.characteristicUuid}`);
+            }
           }
         }
         // 通道3
@@ -333,7 +341,12 @@ struct ClientDetail {
           console.log(`getServices 通道3 characteristic = '${characteristic?.characteristicUuid}'`);
           // setNotification
           if (characteristic) {
-            await this.setNotificationChannel(gatt, item, characteristic, true);
+            const success = await this.setNotificationChannel(gatt, item, characteristic, true);
+            if (success) {
+              console.log(`Notification set successfully for characteristic（通道3） ${characteristic.characteristicUuid}`);
+            } else {
+              console.log(`Failed to set notification for characteristic（通道3） ${characteristic.characteristicUuid}`);
+            }
           }
         }
         // 通道4
@@ -343,7 +356,12 @@ struct ClientDetail {
           console.log(`getServices 通道4 characteristic = '${characteristic?.characteristicUuid}'`);
           // setNotification
           if (characteristic) {
-            await this.setNotificationChannel(gatt, item, characteristic, true);
+            const success = await this.setNotificationChannel(gatt, item, characteristic, true);
+            if (success) {
+              console.log(`Notification set successfully for characteristic（通道4） ${characteristic.characteristicUuid}`);
+            } else {
+              console.log(`Failed to set notification for characteristic（通道4） ${characteristic.characteristicUuid}`);
+            }
           }
         }
       }
@@ -484,28 +502,34 @@ struct ClientDetail {
    * 向服务端发送设置通知此indicate征值请求
    */
   async setNotificationChannel(
-    gatt: ble.GattClientDevice | null | undefined,
+    gatt: ble.GattClientDevice | null ,
     gattService: ble.GattService | undefined,
     characteristic: ble.BLECharacteristic,
     enable: boolean
-  ): Promise<void>{
+  ): Promise<boolean>{
     if (!gattService) {
       this.characteristicValue = '';
-      console.log('BluetoothPage bluetooth gattServiceInfo is undefined ');
-      return
+      console.log('bluetooth gattServiceInfo is undefined ');
+      return false; // 返回失败
+    }
+
+    if (gatt == null){
+      console.log('gatt is null')
+      return false; // 返回失败
     }
 
     try {
       if (gatt) {
-        console.log(`setNotificationChannel characteristic UUID: ${characteristic.characteristicUuid}, enable: ${enable}`)
+        console.log(`setNotificationChannel characteristic UUID: ${characteristic.characteristicUuid}, enable: ${enable}`);
         await gatt?.setCharacteristicChangeNotification(characteristic, enable)
-        //this.gattClient.setCharacteristicChangeIndication(characteristic, enable)
-
         console.log('BluetoothPage setCharacteristicChangeNotification finish');
+        return true; // 返回成功
       }
     } catch (err) {
       console.error('errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+      return false; // 返回失败
     }
+    return false; // 如果没有gatt，返回失败
   }
 
 }
