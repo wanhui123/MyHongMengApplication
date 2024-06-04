@@ -89,6 +89,20 @@ class Utils {
     return buffer.buffer;
   }
 
+  //将ArrayBuffer切分成固定长度的块
+  splitArrayBuffer(data: ArrayBuffer, chunkSize: number): ArrayBuffer[] {
+    const dataArray = new Uint8Array(data);
+    const chunks: ArrayBuffer[] = [];
+
+    for (let i = 0; i < dataArray.length; i += chunkSize) {
+      const chunk = dataArray.slice(i, i + chunkSize);
+      // 创建一个新的ArrayBuffer，并将切片数据复制进去
+      const chunkBuffer = chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength);
+      chunks.push(chunkBuffer);
+    }
+
+    return chunks;
+  }
 
 }
 
