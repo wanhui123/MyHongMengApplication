@@ -295,56 +295,58 @@ struct ClientDetail {
   /**
    * client端获取蓝牙低功耗设备的所有服务，即服务发现 (获取所有服务)
    */
-  getServices() {
+  async getServices() {
     if (this.gattClient) {
       this.gattServiceInfo = undefined;
-      this.gattClient.getServices().then((result: Array<ble.GattService>) => {
-        console.info('getServices successfully:' + JSON.stringify(result));
-        result.filter(item => {
-          console.info('getServices item= '+ JSON.stringify(item))
+      const result: Array<ble.GattService> = await this.gattClient.getServices();
+      console.info('getServices successfully:' + JSON.stringify(result));
 
-          let gatt = this.gattClient
+      for (const item of result) {
+        console.info('getServices item= ' + JSON.stringify(item));
 
-          //通道1
-          if (item.serviceUuid == UART_SERVICE_UUID) {
-            this.gattServiceInfo = item;
-            const characteristic = item.characteristics.find(c => c.characteristicUuid == UART_TX_Characteristic_UUID)
-            console.log(`getServices 通道1 characteristic = '${characteristic?.characteristicUuid}'`)
-            //setNotification
-            if (characteristic) {
-              this.setNotificationChannel(gatt,item, characteristic, true)
-            }
-          } else if (item.serviceUuid == CONTROL_UART_SERVICE_UUID) {
-            this.uart2gattServiceInfo = item
-            const characteristic = item.characteristics.find(c => c.characteristicUuid == CONTROL_TX_CHARACTERISTIC_UUID)
-            console.log(`getServices 通道2 characteristic = '${characteristic?.characteristicUuid}'`)
-            //setNotification
-            if (characteristic) {
-              this.setNotificationChannel(gatt,item, characteristic, true)
-            }
-          } else if (item.serviceUuid == THIRD_UART_SERVICE_UUID) {
-            this.uart3gattServiceInfo = item
-            const characteristic = item.characteristics.find(c => c.characteristicUuid == THIRD_UART_TX_CHARACTERISTIC_UUID)
-            console.log(`getServices 通道3 characteristic = '${characteristic?.characteristicUuid}'`)
-            //setNotification
-            if (characteristic) {
-              this.setNotificationChannel(gatt,item, characteristic,true)
-            }
-          } else if (item.serviceUuid == FOURTH_UART_SERVICE_UUID) {
-            this.uart4gattServiceInfo = item
-            const characteristic = item.characteristics.find(c => c.characteristicUuid == FOURTH_UART_TX_CHARACTERISTIC_UUID)
-            console.log(`getServices 通道4 characteristic = '${characteristic?.characteristicUuid}'`)
-            //setNotification
-            if (characteristic) {
-              this.setNotificationChannel(gatt,item, characteristic,true)
-            }
+        let gatt = this.gattClient;
+
+        // 通道1
+        if (item.serviceUuid === UART_SERVICE_UUID) {
+          this.gattServiceInfo = item;
+          const characteristic = item.characteristics.find(c => c.characteristicUuid === UART_TX_Characteristic_UUID);
+          console.log(`getServices 通道1 characteristic = '${characteristic?.characteristicUuid}'`);
+          // setNotification
+          if (characteristic) {
+            await this.setNotificationChannel(gatt, item, characteristic, true);
           }
-
-
-        })
-
-
-      });
+        }
+        // 通道2
+        else if (item.serviceUuid === CONTROL_UART_SERVICE_UUID) {
+          this.uart2gattServiceInfo = item;
+          const characteristic = item.characteristics.find(c => c.characteristicUuid === CONTROL_TX_CHARACTERISTIC_UUID);
+          console.log(`getServices 通道2 characteristic = '${characteristic?.characteristicUuid}'`);
+          // setNotification
+          if (characteristic) {
+            await this.setNotificationChannel(gatt, item, characteristic, true);
+          }
+        }
+        // 通道3
+        else if (item.serviceUuid === THIRD_UART_SERVICE_UUID) {
+          this.uart3gattServiceInfo = item;
+          const characteristic = item.characteristics.find(c => c.characteristicUuid === THIRD_UART_TX_CHARACTERISTIC_UUID);
+          console.log(`getServices 通道3 characteristic = '${characteristic?.characteristicUuid}'`);
+          // setNotification
+          if (characteristic) {
+            await this.setNotificationChannel(gatt, item, characteristic, true);
+          }
+        }
+        // 通道4
+        else if (item.serviceUuid === FOURTH_UART_SERVICE_UUID) {
+          this.uart4gattServiceInfo = item;
+          const characteristic = item.characteristics.find(c => c.characteristicUuid === FOURTH_UART_TX_CHARACTERISTIC_UUID);
+          console.log(`getServices 通道4 characteristic = '${characteristic?.characteristicUuid}'`);
+          // setNotification
+          if (characteristic) {
+            await this.setNotificationChannel(gatt, item, characteristic, true);
+          }
+        }
+      }
     }
   }
 
@@ -481,12 +483,12 @@ struct ClientDetail {
   /**
    * 向服务端发送设置通知此indicate征值请求
    */
-  setNotificationChannel(
+  async setNotificationChannel(
     gatt: ble.GattClientDevice | null | undefined,
     gattService: ble.GattService | undefined,
     characteristic: ble.BLECharacteristic,
     enable: boolean
-  ) {
+  ): Promise<void>{
     if (!gattService) {
       this.characteristicValue = '';
       console.log('BluetoothPage bluetooth gattServiceInfo is undefined ');
@@ -496,7 +498,7 @@ struct ClientDetail {
     try {
       if (gatt) {
         console.log(`setNotificationChannel characteristic UUID: ${characteristic.characteristicUuid}, enable: ${enable}`)
-        gatt?.setCharacteristicChangeNotification(characteristic, enable)
+        await gatt?.setCharacteristicChangeNotification(characteristic, enable)
         //this.gattClient.setCharacteristicChangeIndication(characteristic, enable)
 
         console.log('BluetoothPage setCharacteristicChangeNotification finish');
