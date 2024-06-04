@@ -183,10 +183,22 @@ struct ClientDetail {
 
         //读取指定通道（电量）的特征
         Column({ space: 10 }) {
-          Button('client端读取蓝牙低功耗设备电量的特征值').onClick(() => {
+          Button('client端读取蓝牙低功耗设备电量的特征值').onClick(async () => {
             const batteryCharacteristic = this.batteryGattServiceInfo?.characteristics.find(c => c.characteristicUuid === BATTERY_LEVEL_CHARACTERISTIC_UUID);
             if(batteryCharacteristic){
-              this.readCharacteristicValue(this.gattClient, batteryCharacteristic)
+              try {
+                const characteristicValue = await this.readCharacteristicValue(this.gattClient, batteryCharacteristic)
+                if (characteristicValue) {
+                  // 创建一个DataView来读取ArrayBuffer
+                  const dataView = new DataView(characteristicValue);
+                  // 从DataView中获取第一个字节的值
+                  const firstByte = dataView.getUint8(0); // 这里假设你想要获取的是无符号整数
+                  this.characteristicValue = '特征值：' + firstByte;
+                }
+              }catch (error) {
+                console.error('Error occurred while reading characteristic value:', error);
+              }
+              
             }
           })
 
@@ -410,41 +422,30 @@ struct ClientDetail {
   /**
    * client端读取蓝牙低功耗设备特定服务的特征值 (读取指定通道的特征)
    */
-  readCharacteristicValue(
+  async readCharacteristicValue(
     gatt: ble.GattClientDevice | null | undefined,
     characteristic: ble.BLECharacteristic,
-  ) {
-    if (!gatt) {
-      this.characteristicValue = '';
-      console.log('gatt is not available ');
-      return
-    }
-
-    try {
-      if (gatt) {
-        gatt.readCharacteristicValue(characteristic, (err, bleCharacteristicDataOut) => {
-          if (err != null) {
-            console.error('readCharacteristicValue error, code = ' + (err as BusinessError).code)
-            this.characteristicValue = '';
-            return;
-          }
-
-          const characteristicValue = bleCharacteristicDataOut.characteristicValue
-
-          // 创建一个DataView来读取ArrayBuffer
-          const dataView = new DataView(characteristicValue);
-          // 从DataView中获取第一个字节的值
-          const firstByte = dataView.getUint8(0); // 这里假设你想要获取的是无符号整数
-
-          console.info(`NEW SDK readCharacteristicValue : ${Utils.arrayBufferToHex(characteristicValue)}, for: ${bleCharacteristicDataOut.characteristicUuid}`);
-          this.characteristicValue = '特征值：' + firstByte;
-
-        });
+  ): Promise<ArrayBuffer | null> {
+    return new Promise<ArrayBuffer | null>(async (resolve, reject) => {
+      if (!gatt) {
+        this.characteristicValue = '';
+        console.log('gatt is not available ');
+        resolve(null);
       }
 
-    } catch (err) {
-      console.error('errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
-    }
+      try {
+        if (gatt) {
+          const bleCharacteristicDataOut = await gatt.readCharacteristicValue(characteristic);
+          const characteristicValue: ArrayBuffer = bleCharacteristicDataOut.characteristicValue;
+          console.info(`NEW SDK readCharacteristicValue : ${Utils.arrayBufferToHex(characteristicValue)}, for: ${bleCharacteristicDataOut.characteristicUuid}`);
+          resolve(characteristicValue);
+        }
+      } catch (err) {
+        const errorMessage = 'Error occurred while reading characteristic value';
+        console.error(errorMessage + ', err: ', err);
+        reject(new Error(errorMessage));
+      }
+    });
   }
 
   /**
