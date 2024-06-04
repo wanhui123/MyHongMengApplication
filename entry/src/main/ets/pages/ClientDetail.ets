@@ -5,24 +5,28 @@ import Utils from '../utils/Util';
 import { util } from '@kit.ArkTS';
 
 //通道1
-let UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-let UART_RX_Characteristic_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"//手机用于发送给设备
-let UART_TX_Characteristic_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"//手机用于接收
+const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+const UART_RX_Characteristic_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"//手机用于发送给设备
+const UART_TX_Characteristic_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"//手机用于接收
 
 //通道2
-let CONTROL_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA8E"
-let CONTROL_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA8E"
-let CONTROL_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA8E"
+const CONTROL_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA8E"
+const CONTROL_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA8E"
+const CONTROL_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA8E"
 
 //通道3
-let THIRD_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA7E"
-let THIRD_UART_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA7E"
-let THIRD_UART_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA7E"
+const THIRD_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA7E"
+const THIRD_UART_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA7E"
+const THIRD_UART_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA7E"
 
 //通道4
-let FOURTH_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA6E"
-let FOURTH_UART_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA6E"
-let FOURTH_UART_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA6E"
+const FOURTH_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA6E"
+const FOURTH_UART_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA6E"
+const FOURTH_UART_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA6E"
+
+//Battery服务
+const BATTERY_SERVICE_UUID = "0000180F-0000-1000-8000-00805F9B34FB"
+const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
 
 @Entry
@@ -51,6 +55,8 @@ struct ClientDetail {
   @State uart3gattServiceInfo: ble.GattService | undefined = undefined;
   //通道4 的服务信息
   @State uart4gattServiceInfo: ble.GattService | undefined = undefined;
+  //电池 的服务信息
+  @State batteryGattServiceInfo: ble.GattService | undefined = undefined;
 
   @State characteristicValue: string = '';
 
@@ -175,10 +181,13 @@ struct ClientDetail {
         }
         .itemStyle()
 
-        //读取指定通道（通道1）的特征
+        //读取指定通道（电量）的特征
         Column({ space: 10 }) {
-          Button('client端读取蓝牙低功耗设备特定服务的特征值').onClick(() => {
-            this.readCharacteristicValue()
+          Button('client端读取蓝牙低功耗设备电量的特征值').onClick(() => {
+            const batteryCharacteristic = this.batteryGattServiceInfo?.characteristics.find(c => c.characteristicUuid === BATTERY_LEVEL_CHARACTERISTIC_UUID);
+            if(batteryCharacteristic){
+              this.readCharacteristicValue(this.gattClient, batteryCharacteristic)
+            }
           })
 
           Scroll() {
@@ -390,6 +399,10 @@ struct ClientDetail {
             }
           }
         }
+        //电池
+        else if (item.serviceUuid == BATTERY_SERVICE_UUID){
+          this.batteryGattServiceInfo = item
+        }
       }
     }
   }
@@ -397,48 +410,35 @@ struct ClientDetail {
   /**
    * client端读取蓝牙低功耗设备特定服务的特征值 (读取指定通道的特征)
    */
-  readCharacteristicValue() {
-    if (!this.gattServiceInfo) {
+  readCharacteristicValue(
+    gatt: ble.GattClientDevice | null | undefined,
+    characteristic: ble.BLECharacteristic,
+  ) {
+    if (!gatt) {
       this.characteristicValue = '';
-      console.log('BluetoothPage bluetooth gattServiceInfo is undefined ');
+      console.log('gatt is not available ');
       return
     }
-    let services: ble.GattService = this.gattServiceInfo;
-
-    let descriptors: Array<ble.BLEDescriptor> = [];
-    // let bufferDesc = new ArrayBuffer(8);
-    // let descV = new Uint8Array(bufferDesc);
-    // descV[0] = 11;
-    // let descriptor: ble.BLEDescriptor = {
-    //   serviceUuid: services.characteristics[0].descriptors[0].serviceUuid,
-    //   characteristicUuid: services.characteristics[0].descriptors[0].characteristicUuid,
-    //   descriptorUuid: services.characteristics[0].descriptors[0].descriptorUuid,
-    //   descriptorValue: bufferDesc
-    // };
-    // descriptors[0] = descriptor;
-
-    let bufferCCC = new ArrayBuffer(8);
-    let cccV = new Uint8Array(bufferCCC);
-    cccV[0] = 1;
-    let characteristic: ble.BLECharacteristic = {
-      serviceUuid: services.characteristics[0].serviceUuid,
-      characteristicUuid: services.characteristics[0].characteristicUuid,//发送的特征
-      characteristicValue: bufferCCC,
-      descriptors: descriptors
-    };
 
     try {
-      if (this.gattClient) {
-        this.gattClient.readCharacteristicValue(characteristic, (err, bleCharacteristicDataOut) => {
+      if (gatt) {
+        gatt.readCharacteristicValue(characteristic, (err, bleCharacteristicDataOut) => {
           if (err != null) {
             console.error('readCharacteristicValue error, code = ' + (err as BusinessError).code)
             this.characteristicValue = '';
             return;
           }
-          const decoder = util.TextDecoder.create('"utf-8"');
-          const str = decoder.decodeWithStream(new Uint8Array(bleCharacteristicDataOut.characteristicValue));
-          console.info('bluetooth readCharacteristicValue = ' + str);
-          this.characteristicValue = '特征值：' + str;
+
+          const characteristicValue = bleCharacteristicDataOut.characteristicValue
+
+          // 创建一个DataView来读取ArrayBuffer
+          const dataView = new DataView(characteristicValue);
+          // 从DataView中获取第一个字节的值
+          const firstByte = dataView.getUint8(0); // 这里假设你想要获取的是无符号整数
+
+          console.info(`NEW SDK readCharacteristicValue : ${Utils.arrayBufferToHex(characteristicValue)}, for: ${bleCharacteristicDataOut.characteristicUuid}`);
+          this.characteristicValue = '特征值：' + firstByte;
+
         });
       }
 
