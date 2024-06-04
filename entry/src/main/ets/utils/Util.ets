@@ -35,9 +35,26 @@ class Utils {
     let buffer = new ArrayBuffer(value.length);
     let dest = new Uint8Array(buffer);
     encoder.encodeIntoUint8Array(value, dest);
-
+    Uint8Array
     return buffer;
   }
+
+  //将 ArrayBuffer 转十六进制字符串
+  arrayBufferToHex(buffer: ArrayBuffer, hasSpace: boolean = true): string {
+    const byteArray = new Uint8Array(buffer);
+    const hexParts: string[] = [];
+
+    byteArray.forEach(byte => {
+      // 将字节转换为两位十六进制字符串，并推入数组
+      const hex = byte.toString(16).padStart(2, '0');
+      hexParts.push(hex);
+    });
+
+    // 根据hasSpace参数选择是否添加空格
+    return hasSpace ? hexParts.join(' ') : hexParts.join('');
+  }
+
+
 }
 
 export default new Utils()

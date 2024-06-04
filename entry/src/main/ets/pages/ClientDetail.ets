@@ -7,12 +7,22 @@ import { util } from '@kit.ArkTS';
 //通道1
 let UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 let UART_RX_Characteristic_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"//手机用于发送给设备
-let UART_TX_Characteristic_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"//手机用于接收
+let UART_TX_Characteristic_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"//手机用于接收
 
 //通道2
 let CONTROL_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA8E"
-let CONTRO_RX_Characteristic_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA8E"
-let CONTRO_TX_Characteristic_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA8E"
+let CONTROL_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA8E"
+let CONTROL_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA8E"
+
+//通道3
+let THIRD_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA7E"
+let THIRD_UART_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA7E"
+let THIRD_UART_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA7E"
+
+//通道4
+let FOURTH_UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA6E"
+let FOURTH_UART_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA6E"
+let FOURTH_UART_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA6E"
 
 
 @Entry
@@ -33,20 +43,14 @@ struct ClientDetail {
   //连接状态
   @State connectState: ble.ProfileConnectionState = constant.ProfileConnectionState.STATE_DISCONNECTED;
 
-  // //通道1 服务的uuid
-  // private serviceUuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
-  // private RxCharacteristic = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"//发送的特征
-  // private TXCharacteristicUUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"//接收的特征
-  // //通道1 的服务信息
-  // @State gattServiceInfo: ble.GattService | undefined = undefined;
-
-
-  //通道1 服务的uuid
-  private serviceUuid = UART_SERVICE_UUID;
   //通道1 的服务信息
   @State gattServiceInfo: ble.GattService | undefined = undefined;
-
-
+  //通道2 的服务信息
+  @State uart2gattServiceInfo: ble.GattService | undefined = undefined;
+  //通道3 的服务信息
+  @State uart3gattServiceInfo: ble.GattService | undefined = undefined;
+  //通道4 的服务信息
+  @State uart4gattServiceInfo: ble.GattService | undefined = undefined;
 
   @State characteristicValue: string = '';
 
@@ -131,7 +135,7 @@ struct ClientDetail {
               Text('暂无数据')
             }
           }
-          .height(500)
+          .height(200)
           .scrollBar(BarState.Off)
         }
         .itemStyle()
@@ -299,18 +303,41 @@ struct ClientDetail {
         result.filter(item => {
           console.info('getServices item= '+ JSON.stringify(item))
 
-          if (item.serviceUuid == this.serviceUuid) {
+          let gatt = this.gattClient
+
+          //通道1
+          if (item.serviceUuid == UART_SERVICE_UUID) {
             this.gattServiceInfo = item;
-            //let characteristic = item?.characteristics[0]
-            let characteristic1 = item?.characteristics[1]
-
-            let characteristicValue = Utils.ArrayBuffer2String(characteristic1?.characteristicValue)
-            console.info('getServices 通道1= ' + JSON.stringify(item.characteristics))
-            console.info('getServices 通道1的特征= ' + JSON.stringify(characteristic1))
-            console.info('getServices 通道1的特征characteristicValue= ' + characteristic1)
-
+            const characteristic = item.characteristics.find(c => c.characteristicUuid == UART_TX_Characteristic_UUID)
+            console.log(`getServices 通道1 characteristic = '${characteristic?.characteristicUuid}'`)
             //setNotification
-            this.setNotificationChannel()
+            if (characteristic) {
+              this.setNotificationChannel(gatt,item, characteristic, true)
+            }
+          } else if (item.serviceUuid == CONTROL_UART_SERVICE_UUID) {
+            this.uart2gattServiceInfo = item
+            const characteristic = item.characteristics.find(c => c.characteristicUuid == CONTROL_TX_CHARACTERISTIC_UUID)
+            console.log(`getServices 通道2 characteristic = '${characteristic?.characteristicUuid}'`)
+            //setNotification
+            if (characteristic) {
+              this.setNotificationChannel(gatt,item, characteristic, true)
+            }
+          } else if (item.serviceUuid == THIRD_UART_SERVICE_UUID) {
+            this.uart3gattServiceInfo = item
+            const characteristic = item.characteristics.find(c => c.characteristicUuid == THIRD_UART_TX_CHARACTERISTIC_UUID)
+            console.log(`getServices 通道3 characteristic = '${characteristic?.characteristicUuid}'`)
+            //setNotification
+            if (characteristic) {
+              this.setNotificationChannel(gatt,item, characteristic,true)
+            }
+          } else if (item.serviceUuid == FOURTH_UART_SERVICE_UUID) {
+            this.uart4gattServiceInfo = item
+            const characteristic = item.characteristics.find(c => c.characteristicUuid == FOURTH_UART_TX_CHARACTERISTIC_UUID)
+            console.log(`getServices 通道4 characteristic = '${characteristic?.characteristicUuid}'`)
+            //setNotification
+            if (characteristic) {
+              this.setNotificationChannel(gatt,item, characteristic,true)
+            }
           }
 
 
@@ -382,13 +409,12 @@ struct ClientDetail {
       if (this.gattClient) {
         //监听
         this.gattClient.on('BLECharacteristicChange', (characteristicChangeReq: ble.BLECharacteristic) => {
-          let serviceUuid: string = characteristicChangeReq.serviceUuid;
-          let characteristicUuid: string = characteristicChangeReq.characteristicUuid;
-          console.log(`onBleCharacteristicChange serviceUuid:${serviceUuid}, characteristicUuid:${characteristicUuid}`)
-          let value: Uint8Array = new Uint8Array(characteristicChangeReq.characteristicValue);
-          console.log('BluetoothPage BLECharacteristicChange value = ' + JSON.stringify(characteristicChangeReq));
-          this.writeValueRecording.push(`${new Date().getTime()}_变化： ` +
-          Utils.ArrayBuffer2String(characteristicChangeReq.characteristicValue))
+          //let serviceUuid: string = characteristicChangeReq.serviceUuid;
+          //let characteristicUuid: string = characteristicChangeReq.characteristicUuid;
+          //let value: Uint8Array = new Uint8Array(characteristicChangeReq.characteristicValue);
+          //console.log('BluetoothPage BLECharacteristicChange value = ' + JSON.stringify(characteristicChangeReq));
+          this.writeValueRecording.push(`${new Date().getTime()}_变化： ` + Utils.arrayBufferToHex(characteristicChangeReq.characteristicValue))
+          console.log( `BluetoothPage BLECharacteristicChange Hex: `+ Utils.arrayBufferToHex(characteristicChangeReq.characteristicValue))
         })
         this.bleCharChangeSwitch = true;
         console.log('BluetoothPage bleCharacteristicChange ' + this.bleCharChangeSwitch);
@@ -455,19 +481,23 @@ struct ClientDetail {
   /**
    * 向服务端发送设置通知此indicate征值请求
    */
-  setNotificationChannel(isOn: boolean = true) {
-    if (!this.gattServiceInfo) {
+  setNotificationChannel(
+    gatt: ble.GattClientDevice | null | undefined,
+    gattService: ble.GattService | undefined,
+    characteristic: ble.BLECharacteristic,
+    enable: boolean
+  ) {
+    if (!gattService) {
       this.characteristicValue = '';
       console.log('BluetoothPage bluetooth gattServiceInfo is undefined ');
       return
     }
-    let services: ble.GattService = this.gattServiceInfo;
 
-    let characteristic: ble.BLECharacteristic = services.characteristics[1]
     try {
-      if (this.gattClient) {
-        console.log(`setNotificationChannel characteristic UUID: ${characteristic.characteristicUuid}, isOn: ${isOn},characteristics[0]: ${services.characteristics[0].characteristicUuid} `)
-        this.gattClient.setCharacteristicChangeNotification(services.characteristics[0], isOn)
+      if (gatt) {
+        console.log(`setNotificationChannel characteristic UUID: ${characteristic.characteristicUuid}, enable: ${enable}`)
+        gatt?.setCharacteristicChangeNotification(characteristic, enable)
+        //this.gattClient.setCharacteristicChangeIndication(characteristic, enable)
 
         console.log('BluetoothPage setCharacteristicChangeNotification finish');
       }
