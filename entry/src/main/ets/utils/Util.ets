@@ -54,6 +54,41 @@ class Utils {
     return hasSpace ? hexParts.join(' ') : hexParts.join('');
   }
 
+  //将16进制字符串转换为ArrayBuffer
+  hexStringToArrayBuffer(hexString: string): ArrayBuffer {
+    // 如果字符串长度不是偶数，补0
+    if (hexString.length % 2 !== 0) {
+      hexString = '0' + hexString;
+    }
+
+    const buffer = new Uint8Array(hexString.length / 2);
+
+    for (let i = 0; i < hexString.length; i += 2) {
+      buffer[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
+    }
+
+    return buffer.buffer;
+  }
+
+  //去掉字符串中的空格，然后将剩余的字符串转换成ArrayBuffer
+  hexStringWithoutSpacesToArrayBuffer(hexString: string): ArrayBuffer {
+    // 去掉空格
+    let hexWithoutSpaces = hexString.replace(/\s/g, '');
+
+    // 如果字符串长度不是偶数，补0
+    if (hexWithoutSpaces.length % 2 !== 0) {
+      hexWithoutSpaces = '0' + hexWithoutSpaces;
+    }
+
+    const buffer = new Uint8Array(hexWithoutSpaces.length / 2);
+
+    for (let i = 0; i < hexWithoutSpaces.length; i += 2) {
+      buffer[i / 2] = parseInt(hexWithoutSpaces.substring(i, i + 2), 16);
+    }
+
+    return buffer.buffer;
+  }
+
 
 }
 

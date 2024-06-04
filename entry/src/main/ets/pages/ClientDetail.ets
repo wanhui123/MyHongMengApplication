@@ -193,17 +193,43 @@ struct ClientDetail {
         }
         .itemStyle()
 
-        //写特征值
+        //写特征值(630按键音 开)
         Row() {
           TextInput({ text: this.cValue })
             .onChange((value: string) => {
               this.cValue = value
             })
-            .width('75%')
+            .width('50%')
             .height(40)
             .borderRadius(0)
-          Button('写特征值').onClick(() => {
-            this.writeCharacteristicValue()
+          Button('写特征值 (按键音 开)').onClick(() => {
+            //通道1 的用于发送消息的特征
+            const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
+            if (uartRxCharacteristic){
+              let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F F4 01 FF FF FF FF FF FF FF FF E7 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 01")
+              this.writeCharacteristicValue(data, this.gattClient, uartRxCharacteristic)
+            }
+          })
+            .type(ButtonType.Normal)
+            .width('25%')
+        }
+
+        //写特征值 (630按键音 关)
+        Row() {
+          TextInput({ text: this.cValue })
+            .onChange((value: string) => {
+              this.cValue = value
+            })
+            .width('50%')
+            .height(40)
+            .borderRadius(0)
+          Button('写特征值 (按键音 关)').onClick(() => {
+            //通道1 的用于发送消息的特征
+            const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
+            if (uartRxCharacteristic){
+              let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F AA 01 FF FF FF FF FF FF FF FF 32 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 00")
+              this.writeCharacteristicValue(data, this.gattClient, uartRxCharacteristic)
+            }
           })
             .type(ButtonType.Normal)
             .width('25%')
@@ -462,32 +488,20 @@ struct ClientDetail {
   }
 
   //写特征值
-  writeCharacteristicValue() {
+  writeCharacteristicValue(
+    data: ArrayBuffer,
+    gatt: ble.GattClientDevice | null | undefined,
+    characteristic: ble.BLECharacteristic,
+  ) {
     if (!this.gattServiceInfo) {
       this.characteristicValue = '';
       console.log('BluetoothPage bluetooth gattServiceInfo is undefined ');
       return
     }
-    let services: ble.GattService = this.gattServiceInfo;
-
-    let descriptors: Array<ble.BLEDescriptor> = [];
-    // let descriptor: ble.BLEDescriptor = {
-    //   serviceUuid: services.serviceUuid,
-    //   characteristicUuid: services.characteristics[0].characteristicUuid,
-    //   descriptorUuid: services.characteristics[0].descriptors[0].descriptorUuid,
-    //   descriptorValue: services.characteristics[0].descriptors[0].descriptorValue
-    // };
-    // descriptors[0] = descriptor;
-
-    let characteristic: ble.BLECharacteristic = {
-      serviceUuid: services.serviceUuid,
-      characteristicUuid: services.characteristics[0].characteristicUuid,
-      characteristicValue: Utils.string2ArrayBuffer(this.cValue),
-      descriptors: descriptors
-    };
     try {
-      if (this.gattClient) {
-        this.gattClient.writeCharacteristicValue(characteristic, ble.GattWriteType.WRITE_NO_RESPONSE);
+      if (gatt) {
+        characteristic.characteristicValue = data
+        gatt.writeCharacteristicValue(characteristic, ble.GattWriteType.WRITE_NO_RESPONSE);
         promptAction.showToast({
           message: '特征值写结束'
         })
