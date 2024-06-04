@@ -448,19 +448,38 @@ struct ClientDetail {
   }
 
   /**
-   * 订阅蓝牙低功耗设备的特征值变化事件
+   * 订阅蓝牙低功耗设备的特征值变化事件 (接收消息)
    */
   onBleCharacteristicChange() {
     try {
       if (this.gattClient) {
         //监听
         this.gattClient.on('BLECharacteristicChange', (characteristicChangeReq: ble.BLECharacteristic) => {
-          //let serviceUuid: string = characteristicChangeReq.serviceUuid;
-          //let characteristicUuid: string = characteristicChangeReq.characteristicUuid;
+          let serviceUuid: string = characteristicChangeReq.serviceUuid;
+          let characteristicUuid: string = characteristicChangeReq.characteristicUuid;
           //let value: Uint8Array = new Uint8Array(characteristicChangeReq.characteristicValue);
           //console.log('BluetoothPage BLECharacteristicChange value = ' + JSON.stringify(characteristicChangeReq));
-          this.writeValueRecording.push(`${new Date().getTime()}_变化： ` + Utils.arrayBufferToHex(characteristicChangeReq.characteristicValue))
-          console.log( `BluetoothPage BLECharacteristicChange Hex: `+ Utils.arrayBufferToHex(characteristicChangeReq.characteristicValue))
+          const characteristicValue = characteristicChangeReq.characteristicValue
+          this.writeValueRecording.push(`${new Date().toDateString()}_变化： ` + Utils.arrayBufferToHex(characteristicValue))
+          //console.log( `BluetoothPage BLECharacteristicChange Hex: `+ Utils.arrayBufferToHex(characteristicValue))
+
+          //通道1
+          if(serviceUuid == UART_SERVICE_UUID){
+            console.log(`NEW SDK Channel 1<------ Receive data: ${Utils.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
+          }
+          //通道2
+          else if (serviceUuid === CONTROL_UART_SERVICE_UUID){
+            console.log(`NEW SDK Channel 2<------ Receive data: ${Utils.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
+          }
+          //通道3
+          else if (serviceUuid === THIRD_UART_SERVICE_UUID){
+            console.log(`NEW SDK Channel 3<------ Receive data: ${Utils.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
+          }
+          //通道4
+          else if (serviceUuid === THIRD_UART_SERVICE_UUID){
+            console.log(`NEW SDK Channel 4<------ Receive data: ${Utils.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
+          }
+
         })
         this.bleCharChangeSwitch = true;
         console.log('BluetoothPage bleCharacteristicChange ' + this.bleCharChangeSwitch);
