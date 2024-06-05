@@ -15,7 +15,7 @@ class BluetoothScanner{
     return BluetoothScanner.instance;
   }
 
-  async startScan(callback: (devices: Array<ble.ScanResult>) => void): Promise<void> {
+  async startScan(filters: Array<ble.ScanFilter> | null  = null, callback: (devices: Array<ble.ScanResult>) => void): Promise<void> {
     if (this.isScanning) return; // 已经在扫描中
     try {
       const scanOptions: ble.ScanOptions = {
@@ -31,7 +31,7 @@ class BluetoothScanner{
       });
 
       // 开始扫描
-      ble.startBLEScan(null, scanOptions);
+      ble.startBLEScan(filters, scanOptions);
       console.info('BLE scan started successfully');
       this.isScanning = true;
     } catch (err) {

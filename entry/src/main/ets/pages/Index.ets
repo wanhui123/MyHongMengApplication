@@ -108,24 +108,13 @@ struct Index {
 
   //开始扫描
   startScan() {
-    // try {
-    //   //let scanFilter: ble.ScanFilter = {
-    //   // manufactureId: manufactureId,
-    //   // manufactureData: manufactureData.buffer,
-    //   //};
-    //   let scanOptions: ble.ScanOptions = {
-    //     interval: 1000,
-    //     dutyMode: ble.ScanDuty.SCAN_MODE_LOW_LATENCY,
-    //     matchMode: ble.MatchMode.MATCH_MODE_AGGRESSIVE,
-    //   }
-    //   ble.startBLEScan(null, scanOptions)
-    //   console.info('ble Client start BLE Scan success')
-    //   this.scanSwitch = true;
-    // } catch (err) {
-    //   console.error('errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
-    // }
 
-    BluetoothScanner.getInstance().startScan((data: Array<ble.ScanResult>)=>{
+    let scanFilters: Array<ble.ScanFilter> | null = [{
+      name: "iGS800"
+    }]
+    scanFilters = null//搜索所有 不过滤
+
+    BluetoothScanner.getInstance().startScan(scanFilters,(data: Array<ble.ScanResult>)=>{
       console.info('bluetooth device find on = '+ data.length.toString() + JSON.stringify(data));
       this.bleDevices = data
       for (let i = 0; i < data.length; i++){
