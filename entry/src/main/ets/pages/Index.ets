@@ -1,7 +1,7 @@
 
 import ble from '@ohos.bluetooth.ble';
-import { BusinessError } from '@kit.BasicServicesKit';
 import PermissionsUtil from '../utils/PermissionsUtil';
+import BluetoothScanner from '@ohos/blebib/src/main/ets/scan/BluetoothScanner';
 
 @Entry
 @Component
@@ -22,10 +22,8 @@ struct Index {
             .onChange((isOn: boolean) => {
               if (isOn) {
                 this.startScan()
-                this.onBLEDeviceFind()
               } else {
                 this.stopScan()
-                this.offBLEDeviceFind()
               }
               console.info('ble server instanceSwitch status:' + isOn)
             })
@@ -110,56 +108,46 @@ struct Index {
 
   //开始扫描
   startScan() {
-    try {
-      //let scanFilter: ble.ScanFilter = {
-      // manufactureId: manufactureId,
-      // manufactureData: manufactureData.buffer,
-      //};
-      let scanOptions: ble.ScanOptions = {
-        interval: 1000,
-        dutyMode: ble.ScanDuty.SCAN_MODE_LOW_LATENCY,
-        matchMode: ble.MatchMode.MATCH_MODE_AGGRESSIVE,
-      }
-      ble.startBLEScan(null, scanOptions)
-      console.info('ble Client start BLE Scan success')
-      this.scanSwitch = true;
-    } catch (err) {
-      console.error('errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
-    }
-  }
+    // try {
+    //   //let scanFilter: ble.ScanFilter = {
+    //   // manufactureId: manufactureId,
+    //   // manufactureData: manufactureData.buffer,
+    //   //};
+    //   let scanOptions: ble.ScanOptions = {
+    //     interval: 1000,
+    //     dutyMode: ble.ScanDuty.SCAN_MODE_LOW_LATENCY,
+    //     matchMode: ble.MatchMode.MATCH_MODE_AGGRESSIVE,
+    //   }
+    //   ble.startBLEScan(null, scanOptions)
+    //   console.info('ble Client start BLE Scan success')
+    //   this.scanSwitch = true;
+    // } catch (err) {
+    //   console.error('errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
+    // }
 
-  //停止扫描
-  stopScan(){
-    try {
-      ble.stopBLEScan();
-      console.info('ble Client stop BLE Scan success')
-      this.scanSwitch = false;
-    } catch (err) {
-      console.error('errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
-    }
-  }
-
-  //在 BLE 设备上查找
-  onBLEDeviceFind() {
-    ble.on('BLEDeviceFind', (data: Array<ble.ScanResult>) => {
+    BluetoothScanner.getInstance().startScan((data: Array<ble.ScanResult>)=>{
       console.info('bluetooth device find on = '+ data.length.toString() + JSON.stringify(data));
       this.bleDevices = data
       for (let i = 0; i < data.length; i++){
         let item = data[i];
         this.bleDeviceMap.set(item.deviceId, item)
       }
+    }).then(() => {
+      console.log('Scanning started...');
+    }).catch((err: Error) => {
+      console.error('Error starting scan:', err);
     });
-    //this.deviceFindSwitch = true;
   }
 
-  //关闭 BLE 设备查找
-  offBLEDeviceFind(){
-    ble.off('BLEDeviceFind', (data: Array<ble.ScanResult>) => {
-      console.info('bluetooth device find off = ' + JSON.stringify(data));
-      // this.bleDevices = data;
+  //停止扫描
+  stopScan(){
+    BluetoothScanner.getInstance().stopScan().then(() => {
+      console.log('Scanning stopped');
+    }).catch((err: Error) => {
+      console.error('Error stopping scan:', err);
     });
-    //this.deviceFindSwitch = false;
   }
+
 
 }
 
