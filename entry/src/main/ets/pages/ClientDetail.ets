@@ -2,7 +2,8 @@ import { ble, constant } from '@kit.ConnectivityKit';
 import { promptAction, router } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import Utils from '../utils/Util';
-import { util } from '@kit.ArkTS';
+
+import { BleManager } from '@ohos/blebib'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -88,6 +89,7 @@ struct ClientDetail {
           Blank()
           Toggle({ type: ToggleType.Switch, isOn: this.stateListenSwitch })
             .onChange((isOn: boolean) => {
+              BleManager.create().init()
               if (isOn) {
                 this.onBLEConnectionStateChange()
               } else {
