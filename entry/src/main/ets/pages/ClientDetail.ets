@@ -227,8 +227,8 @@ struct ClientDetail {
             //通道1 的用于发送消息的特征
             const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
             if (uartRxCharacteristic){
-              //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 6A 03 FF 01 FF FF 00 0A A8 01 FF FF FF FF FF FF FF FF F9 08 6A 10 01 18 03 62 02 08 40")
-              let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F F4 01 FF FF FF FF FF FF FF FF E7 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 01")
+              let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 6A 03 FF 01 FF FF 00 0A A8 01 FF FF FF FF FF FF FF FF F9 08 6A 10 01 18 03 62 02 08 40")
+              //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F F4 01 FF FF FF FF FF FF FF FF E7 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 01")
               this.writeCharacteristicValue(data, this.gattClient, uartRxCharacteristic)
             }
           })
@@ -416,6 +416,8 @@ struct ClientDetail {
         else if (item.serviceUuid == BATTERY_SERVICE_UUID){
           this.batteryGattServiceInfo = item
         }
+
+        this.onBLEMtuChange()
       }
     }
   }
@@ -577,6 +579,22 @@ struct ClientDetail {
     }
     return false; // 如果没有gatt，返回失败
   }
+
+  /**
+   * client端订阅MTU状态变化事件
+   */
+  onBLEMtuChange(){
+    try {
+      if (this.gattClient){
+        this.gattClient.on('BLEMtuChange', (mtu: number) => {
+          console.info('BLEMtuChange, mtu: ' + mtu);
+        })
+      }
+    } catch (err) {
+      console.error('onBLEMtuChange errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message)
+    }
+  }
+
 
 }
 
