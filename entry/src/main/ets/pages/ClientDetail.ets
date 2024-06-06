@@ -35,6 +35,8 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 struct ClientDetail {
   device: ble.ScanResult = router.getParams() as ble.ScanResult;
 
+  bleManager = BleManager.create()
+
   @State gattClient: ble.GattClientDevice | undefined = undefined;
   @State deviceName: string = '';
 
@@ -67,11 +69,37 @@ struct ClientDetail {
 
   @State cValue: string = '';
 
+
+  observerToRemove = (state: ble.BLEConnectionChangeState | null) => {
+    // 观察者函数的逻辑
+    console.log('BluetoothPage bluetooth connect state changed');
+    let deviceId = state?.deviceId;
+    console.log('BluetoothPage deviceId connectState ' + deviceId);
+    this.connectState = state!.state;
+
+    //已断开连接
+    if (this.connectState == constant.ProfileConnectionState.STATE_DISCONNECTED) {
+      this.connectStateSwitch = false;
+    }
+
+    //已连接
+    if (this.connectState == constant.ProfileConnectionState.STATE_CONNECTED) {
+      this.connectStateSwitch = true;
+    }
+    console.log('BluetoothPage bluetooth connectState ' + JSON.stringify(this.connectState));
+  };
+
   aboutToAppear(): void {
     if (!this.gattClient) {
       this.gattClient = ble.createGattClientDevice(this.device?.deviceId);
       this.getDeviceName()
     }
+
+    this.bleManager.addObserver(this.observerToRemove)
+  }
+
+  aboutToDisappear(): void {
+    this.bleManager.removeObserver(this.observerToRemove);
   }
 
   build() {
@@ -327,7 +355,8 @@ struct ClientDetail {
    */
   connectServer() {
     if (this.gattClient && this.connectState != constant.ProfileConnectionState.STATE_CONNECTED) {
-      this.gattClient.connect()
+      //this.gattClient.connect()
+      this.gattClient = this.bleManager.connect(this.device)!;
     }
   }
 
