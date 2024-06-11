@@ -111,23 +111,6 @@ struct ClientDetail {
         }
         .itemStyle()
 
-        //连接状态监听
-        Row() {
-          Text('连接状态监听')
-          Blank()
-          Toggle({ type: ToggleType.Switch, isOn: this.stateListenSwitch })
-            .onChange((isOn: boolean) => {
-              BleManager.create().init()
-              if (isOn) {
-                this.onBLEConnectionStateChange()
-              } else {
-                this.offBLEConnectionStateChange()
-              }
-              console.info('ble server instanceSwitch status:' + isOn)
-            })
-        }
-        .itemStyle()
-
         //连接状态
         Row() {
           Text('连接状态')
@@ -157,79 +140,18 @@ struct ClientDetail {
         }
         .itemStyle()
 
-        //获取所有服务（同时setNotification）
-        Column({ space: 10 }) {
-          Button('服务发现').onClick(() => {
-            this.getServices()
-          })
-            .width('100%')
-
-          Scroll() {
-            if (this.gattServiceInfo) {
-              Text(JSON.stringify(this.gattServiceInfo))
-            } else {
-              Text('暂无数据')
-            }
-          }
-          .height(200)
-          .scrollBar(BarState.Off)
-        }
-        .itemStyle()
-
-        //特征值变化事件（接收设备内容）
-        Column({ space: 10 }) {
-          Row() {
-            Text('特征值变化事件')
-            Blank()
-            Toggle({ type: ToggleType.Switch, isOn: this.bleCharChangeSwitch })
-              .onChange((isOn: boolean) => {
-                if (isOn) {
-                  this.onBleCharacteristicChange()
-                } else {
-                  this.offBleCharacteristicChange()
-                }
-                console.info('ble server instanceSwitch status:' + isOn)
-              })
-          }
-          .width('100%')
-
-          Scroll() {
-            if (this.writeValueRecording.length > 0) {
-              List({ space: 5 }) {
-                ForEach(this.writeValueRecording, (item: string) => {
-                  ListItem() {
-                    Text(JSON.stringify(item))
-                  }
-                })
-              }
-            } else {
-              Text('暂无数据')
-            }
-          }
-          .height(100)
-          .scrollBar(BarState.Off)
-        }
-        .itemStyle()
-
         //读取指定通道（电量）的特征
         Column({ space: 10 }) {
           Button('client端读取蓝牙低功耗设备电量的特征值').onClick(async () => {
-            const batteryCharacteristic = this.batteryGattServiceInfo?.characteristics.find(c => c.characteristicUuid === BATTERY_LEVEL_CHARACTERISTIC_UUID);
-            if(batteryCharacteristic){
-              try {
-                const characteristicValue = await this.readCharacteristicValue(this.gattClient, batteryCharacteristic)
-                if (characteristicValue) {
-                  // 创建一个DataView来读取ArrayBuffer
-                  const dataView = new DataView(characteristicValue);
-                  // 从DataView中获取第一个字节的值
-                  const firstByte = dataView.getUint8(0); // 这里假设你想要获取的是无符号整数
-                  this.characteristicValue = '特征值：' + firstByte;
-                }
-              }catch (error) {
-                console.error('Error occurred while reading characteristic value:', error);
-              }
-              
+            const characteristicValue = await this.bleManager.readBattery()
+            if (characteristicValue) {
+              // 创建一个DataView来读取ArrayBuffer
+              const dataView = new DataView(characteristicValue);
+              // 从DataView中获取第一个字节的值
+              const firstByte = dataView.getUint8(0); // 这里假设你想要获取的是无符号整数
+              this.characteristicValue = '特征值：' + firstByte;
             }
+
           })
 
           Scroll() {
@@ -254,13 +176,9 @@ struct ClientDetail {
             .height(40)
             .borderRadius(0)
           Button('写特征值 (按键音 开)').onClick(() => {
-            //通道1 的用于发送消息的特征
-            const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
-            if (uartRxCharacteristic){
-              //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 6A 03 FF 01 FF FF 00 0A A8 01 FF FF FF FF FF FF FF FF F9 08 6A 10 01 18 03 62 02 08 40")//VS1800 自定义模式设置
-              let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F F4 01 FF FF FF FF FF FF FF FF E7 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 01")
-              this.writeCharacteristicValue(data, this.gattClient, uartRxCharacteristic)
-            }
+            //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 6A 03 FF 01 FF FF 00 0A A8 01 FF FF FF FF FF FF FF FF F9 08 6A 10 01 18 03 62 02 08 40")//VS1800 自定义模式设置
+            let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F F4 01 FF FF FF FF FF FF FF FF E7 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 01")
+            this.bleManager.writeUartRXCharacteristic(data)
           })
             .type(ButtonType.Normal)
             .width('25%')
@@ -276,12 +194,8 @@ struct ClientDetail {
             .height(40)
             .borderRadius(0)
           Button('写特征值 (按键音 关)').onClick(() => {
-            //通道1 的用于发送消息的特征
-            const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
-            if (uartRxCharacteristic){
-              let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F AA 01 FF FF FF FF FF FF FF FF 32 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 00")
-              this.writeCharacteristicValue(data, this.gattClient, uartRxCharacteristic)
-            }
+            let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F AA 01 FF FF FF FF FF FF FF FF 32 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 00")
+            this.bleManager.writeUartRXCharacteristic(data)
           })
             .type(ButtonType.Normal)
             .width('25%')
@@ -365,7 +279,8 @@ struct ClientDetail {
    */
   disconnectServer() {
     if (this.gattClient && this.connectState != constant.ProfileConnectionState.STATE_DISCONNECTED) {
-      this.gattClient.disconnect()
+      //this.gattClient.disconnect()
+      this.bleManager.disconnect()
     }
   }
 
