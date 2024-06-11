@@ -59,13 +59,13 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     console.log("BleManager initialization")
   }
 
-  // 设置连接状态，并通知观察者
-  setConnectionState(state: ble.BLEConnectionChangeState | null) {
+  // 设置连接状态，并通知观察者（连接状态）
+  private setConnectionState(state: ble.BLEConnectionChangeState | null) {
     this.connectionState = state;
     this.notifyObservers();
   }
 
-  // 添加观察者
+  // 添加观察者（连接状态）
   addObserver(observer: (state: ble.BLEConnectionChangeState | null) => void) {
     this.connectionStateObservers.push(observer);
     // 如果连接状态已经存在，则立即通知观察者
@@ -74,7 +74,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     }
   }
 
-  // 移除观察者
+  // 移除观察者（连接状态）
   removeObserver(observer: (state: ble.BLEConnectionChangeState | null) => void) {
     const index = this.connectionStateObservers.indexOf(observer);
     if (index !== -1) {
@@ -82,7 +82,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     }
   }
 
-  // 通知观察者连接状态变化
+  // 通知观察者连接状态变化（连接状态）
   private notifyObservers() {
     for (const observer of this.connectionStateObservers) {
       observer(this.connectionState);
