@@ -39,6 +39,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   uart3gattServiceInfo: ble.GattService | undefined = undefined;
   //通道4 的服务信息
   uart4gattServiceInfo: ble.GattService | undefined = undefined;
+
   //电池 的服务信息
   batteryGattServiceInfo: ble.GattService | undefined = undefined;
 
@@ -388,15 +389,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     if(batteryCharacteristic){
       try {
         const characteristicValue = await this.readCharacteristicValue(this.gattClientDevice, batteryCharacteristic)
-        if (characteristicValue){
-          // 创建一个DataView来读取ArrayBuffer
-          const dataView = new DataView(characteristicValue);
-          // 从DataView中获取第一个字节的值
-          const firstByte = dataView.getUint8(0); // 这里假设你想要获取的是无符号整数
-        }
-
         return characteristicValue
-
       }catch (error) {
         console.error('Error occurred while reading characteristic value:', error);
       }
@@ -414,6 +407,57 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
           resolve();
         } else {
           reject(new Error('UART RX Characteristic not found'));
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  //通道2 写特征
+  async readControlUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const uartRxCharacteristic = this.uart2gattServiceInfo?.characteristics.find(c => c.characteristicUuid === CONTROL_RX_CHARACTERISTIC_UUID);
+        if (uartRxCharacteristic) {
+          await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
+          resolve();
+        } else {
+          reject(new Error('CONTROL RX Characteristic not found'));
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  //通道3 写特征
+  async readThirdUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const uartRxCharacteristic = this.uart3gattServiceInfo?.characteristics.find(c => c.characteristicUuid === THIRD_UART_RX_CHARACTERISTIC_UUID);
+        if (uartRxCharacteristic) {
+          await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
+          resolve();
+        } else {
+          reject(new Error('CONTROL RX Characteristic not found'));
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  //通道4 写特征
+  async readFourthUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const uartRxCharacteristic = this.uart4gattServiceInfo?.characteristics.find(c => c.characteristicUuid === FOURTH_UART_RX_CHARACTERISTIC_UUID);
+        if (uartRxCharacteristic) {
+          await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
+          resolve();
+        } else {
+          reject(new Error('CONTROL RX Characteristic not found'));
         }
       } catch (err) {
         reject(err);
