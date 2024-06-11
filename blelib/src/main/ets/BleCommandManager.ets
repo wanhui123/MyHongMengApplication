@@ -6,6 +6,7 @@ import { BleCommand } from './BleCommand'
  */
 export class BleCommandManager{
   private commands: Record<number, BleCommand[]> = {};
+  private waitingForResponse: Record<number, boolean> = {};
 
   /**
    * 添加命令到指定通道
@@ -17,7 +18,7 @@ export class BleCommandManager{
       this.commands[channel] = [];
     }
     this.commands[channel].push(command);
-    if (this.commands[channel].length === 1) {
+    if (this.commands[channel].length === 1 && !this.waitingForResponse[channel]) {
       this.executeNextCommand(channel);
     }
   }
@@ -32,12 +33,26 @@ export class BleCommandManager{
     }
 
     const command = this.commands[channel][0];
+    this.waitingForResponse[channel] = true;
+
     try {
       await command.execute();
       console.log(`通道 ${channel} 命令执行成功`);
     } catch (err) {
       console.error(`通道 ${channel} 命令执行失败: ${err}`);
     } finally {
+      this.waitingForResponse[channel] = false;
+      this.commands[channel].shift();
+      if (this.commands[channel].length > 0) {
+        this.executeNextCommand(channel);
+      }
+    }
+  }
+
+  // 在设备回复时调用
+  onDeviceResponse(channel: number) {
+    if (this.commands[channel] && this.commands[channel].length > 0) {
+      this.commands[channel][0].onDeviceResponse();
       this.commands[channel].shift();
       if (this.commands[channel].length > 0) {
         this.executeNextCommand(channel);

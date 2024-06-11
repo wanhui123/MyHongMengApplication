@@ -14,6 +14,11 @@ export class BleCommand {
   private retries: number;
   private currentRetries: number = 0;
 
+  // 用于标识命令是否完成的标志
+  private resolveFn: () => void = () => {};
+  private rejectFn: (reason?: object) => void = () => {};
+  private timer: number|null = null;
+
   /**
    * 创建一个新的蓝牙命令实例
    * @param gatt Gatt 客户端设备实例
@@ -45,6 +50,8 @@ export class BleCommand {
    */
   execute(): Promise<void> {
     return new Promise(async (resolve, reject) => {
+      this.resolveFn = resolve;
+      this.rejectFn = reject;
       if (!this.gatt) {
         return reject('Gatt 客户端设备实例为空');
       }
@@ -63,7 +70,7 @@ export class BleCommand {
           return reject(`未找到特征 ${this.characteristicUuid}`);
         }
 
-        const timer = setTimeout(() => {
+        this.timer = setTimeout(() => {
           if (this.currentRetries < this.retries) {
             this.currentRetries++;
             this.execute().then(resolve).catch(reject);
@@ -73,12 +80,19 @@ export class BleCommand {
         }, this.timeout);
 
         await this.writeCharacteristicValue(this.data, this.gatt, characteristic);
-        clearTimeout(timer);
-        resolve();
+        //clearTimeout(timer);
+        //resolve();
+        // 不再直接调用 resolve，而是在收到设备回复时调用
       } catch (err) {
         reject(err);
       }
     });
+  }
+
+  // 当设备回复时调用
+  onDeviceResponse() {
+    clearTimeout(this.timer);
+    this.resolveFn();
   }
 
   /**
