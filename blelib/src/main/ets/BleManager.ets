@@ -319,40 +319,36 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     }
   }
 
-
   //写特征值
   async writeCharacteristicValue(
     data: ArrayBuffer,
     gatt: ble.GattClientDevice | null | undefined,
     characteristic: ble.BLECharacteristic,
-  ) {
-    if (!this.gattServiceInfo) {
-      console.log('BluetoothPage bluetooth gattServiceInfo is undefined ');
-      return
-    }
-    try {
-      if (gatt) {
-
-        //根据MTUSize 分包
-        const arrayBuffer = HexUtil.splitArrayBuffer(data, 20)
-        for (let i = 0; i < arrayBuffer.length; i++) {
-          const value = arrayBuffer[i]
-          characteristic.characteristicValue = value
-          await gatt.writeCharacteristicValue(characteristic, ble.GattWriteType.WRITE_NO_RESPONSE);
-          console.log(`writeCharacteristicValue wrValue--> :  ${HexUtil.arrayBufferToHex(value)}`)
+  ): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (gatt) {
+          // 根据 MTUSize 分包
+          const arrayBuffer = HexUtil.splitArrayBuffer(data, 20);
+          for (let i = 0; i < arrayBuffer.length; i++) {
+            const value = arrayBuffer[i]
+            characteristic.characteristicValue = value
+            await gatt.writeCharacteristicValue(characteristic, ble.GattWriteType.WRITE_NO_RESPONSE);
+            console.log(`writeCharacteristicValue wrValue--> :  ${HexUtil.arrayBufferToHex(value)}`)
+          }
+          console.log('BluetoothPage writeCharacteristicValue finish');
+          resolve();
+        } else {
+          reject(new Error('Gatt client device is null or undefined'));
         }
-
-
-        // characteristic.characteristicValue = data
-        // await gatt.writeCharacteristicValue(characteristic, ble.GattWriteType.WRITE_NO_RESPONSE);
-        // promptAction.showToast({
-        //   message: '特征值写结束'
-        // })
-        console.log('BluetoothPage writeCharacteristicValue finish');
+      } catch (err) {
+        const errorCode = (err as BusinessError).code;
+        const errorMessage = (err as BusinessError).message;
+        console.error('errCode: ' + errorCode + ', errMessage: ' + errorMessage);
+        reject(new Error(`errCode: ${errorCode}, errMessage: ${errorMessage}`));
       }
-    } catch (err) {
-      console.error('errCode: ' + (err as BusinessError).code + ', errMessage: ' + (err as BusinessError).message);
-    }
+
+    });
   }
 
   /**
@@ -409,11 +405,20 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   }
 
   //通道1 写特征
-  async writeUartRXCharacteristic(data: ArrayBuffer) {
-    const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
-    if (uartRxCharacteristic){
-      await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic)
-    }
+  async writeUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
+        if (uartRxCharacteristic) {
+          await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
+          resolve();
+        } else {
+          reject(new Error('UART RX Characteristic not found'));
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
 }

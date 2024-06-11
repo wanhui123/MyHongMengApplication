@@ -1,5 +1,5 @@
 import { ble, constant } from '@kit.ConnectivityKit';
-import { router } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import Utils from '../utils/Util';
 
@@ -124,7 +124,15 @@ struct ClientDetail {
           Button('写特征值 (按键音 开)').onClick(() => {
             //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 6A 03 FF 01 FF FF 00 0A A8 01 FF FF FF FF FF FF FF FF F9 08 6A 10 01 18 03 62 02 08 40")//VS1800 自定义模式设置
             let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F F4 01 FF FF FF FF FF FF FF FF E7 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 01")
-            this.bleManager.writeUartRXCharacteristic(data)
+            this.bleManager.writeUartRXCharacteristic(data).then(() => {
+              console.log('UART RX Characteristic write successful');
+              //提示写入成功
+              promptAction.showToast({message:'写入成功'})
+            }).catch((error:Error) => {
+              console.error('UART RX Characteristic write failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'写入失败'})
+            })
           })
             .type(ButtonType.Normal)
             .width('100%')
@@ -134,7 +142,15 @@ struct ClientDetail {
         Row() {
           Button('写特征值 (按键音 关)').onClick(() => {
             let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F AA 01 FF FF FF FF FF FF FF FF 32 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 00")
-            this.bleManager.writeUartRXCharacteristic(data)
+            this.bleManager.writeUartRXCharacteristic(data).then(() => {
+              console.log('UART RX Characteristic write successful');
+              //提示写入成功
+              promptAction.showToast({message:'写入成功'})
+            }).catch((error:Error) => {
+              console.error('UART RX Characteristic write failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'写入失败'})
+            })
           })
             .type(ButtonType.Normal)
             .width('100%')
