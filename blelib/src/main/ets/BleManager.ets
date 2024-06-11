@@ -91,12 +91,23 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   /**
    * client获取远端蓝牙低功耗设备名
    */
-  getDeviceName(gattClient: ble.GattClientDevice) {
-    gattClient.getDeviceName((err: BusinessError, data: string) => {
-      console.info('device name err ' + JSON.stringify(err));
-      console.info('device name' + JSON.stringify(data));
-      let deviceName = data
-    })
+  getDeviceName(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const gattClient = this.gattClientDevice
+      if(gattClient == null) {
+        reject("gattClientDevice is null")
+        return
+      }
+      gattClient.getDeviceName((err: BusinessError, data: string) => {
+        if (err) {
+          console.info('device name err ' + JSON.stringify(err));
+          reject(err);
+        } else {
+          console.info('device name ' + JSON.stringify(data));
+          resolve(data);
+        }
+      });
+    });
   }
 
   /**
