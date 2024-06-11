@@ -1,6 +1,8 @@
 import { ble, constant } from '@kit.ConnectivityKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 import { HexUtil } from './utils/HexUtil'
+import { BleCommandManager } from './BleCommandManager'
+import { BleCommand } from './BleCommand'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -27,6 +29,7 @@ const BATTERY_SERVICE_UUID = "0000180F-0000-1000-8000-00805F9B34FB"
 const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
  class BleManager{
+  private commandManager: BleCommandManager;
 
    //Gatt 客户端设备实例
   private gattClientDevice: ble.GattClientDevice | null = null;
@@ -49,6 +52,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   private connectionStateObservers: ((state: ble.BLEConnectionChangeState | null) => void)[] = [];
 
   private constructor() {
+    this.commandManager = new BleCommandManager();
   }
 
   public static create(): BleManager {
@@ -397,73 +401,122 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     return null
   }
 
-  //通道1 写特征
+  /**
+   * 添加命令并执行
+   * @param channel 通道编号
+   * @param command 命令实例
+   */
+  private addCommand(channel: number, command: BleCommand) {
+    this.commandManager.addCommand(channel, command);
+  }
+
+  /**
+   * 通道1 写特征
+   * @param data 要写入的数据
+   * @returns Promise<void>
+   */
   async writeUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
-        if (uartRxCharacteristic) {
-          await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
-          resolve();
-        } else {
-          reject(new Error('UART RX Characteristic not found'));
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
+    const command = new BleCommand(this.gattClientDevice, UART_SERVICE_UUID, UART_RX_Characteristic_UUID, data);
+    this.addCommand(1, command);
   }
 
-  //通道2 写特征
-  async readControlUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const uartRxCharacteristic = this.uart2gattServiceInfo?.characteristics.find(c => c.characteristicUuid === CONTROL_RX_CHARACTERISTIC_UUID);
-        if (uartRxCharacteristic) {
-          await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
-          resolve();
-        } else {
-          reject(new Error('CONTROL RX Characteristic not found'));
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
+  /**
+   * 通道2 写特征
+   * @param data 要写入的数据
+   * @returns Promise<void>
+   */
+  async writeControlUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+    const command = new BleCommand(this.gattClientDevice, CONTROL_UART_SERVICE_UUID, CONTROL_RX_CHARACTERISTIC_UUID, data);
+    this.addCommand(2, command);
   }
 
-  //通道3 写特征
-  async readThirdUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const uartRxCharacteristic = this.uart3gattServiceInfo?.characteristics.find(c => c.characteristicUuid === THIRD_UART_RX_CHARACTERISTIC_UUID);
-        if (uartRxCharacteristic) {
-          await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
-          resolve();
-        } else {
-          reject(new Error('CONTROL RX Characteristic not found'));
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
+  /**
+   * 通道3 写特征
+   * @param data 要写入的数据
+   * @returns Promise<void>
+   */
+  async writeThirdUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+    const command = new BleCommand(this.gattClientDevice, THIRD_UART_SERVICE_UUID, THIRD_UART_RX_CHARACTERISTIC_UUID, data);
+    this.addCommand(3, command);
   }
 
-  //通道4 写特征
-  async readFourthUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const uartRxCharacteristic = this.uart4gattServiceInfo?.characteristics.find(c => c.characteristicUuid === FOURTH_UART_RX_CHARACTERISTIC_UUID);
-        if (uartRxCharacteristic) {
-          await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
-          resolve();
-        } else {
-          reject(new Error('CONTROL RX Characteristic not found'));
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
+  /**
+   * 通道4 写特征
+   * @param data 要写入的数据
+   * @returns Promise<void>
+   */
+  async writeFourthUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+    const command = new BleCommand(this.gattClientDevice, FOURTH_UART_SERVICE_UUID, FOURTH_UART_RX_CHARACTERISTIC_UUID, data);
+    this.addCommand(4, command);
   }
+
+  //通道1 写特征
+  // async writeUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //       const uartRxCharacteristic = this.gattServiceInfo?.characteristics.find(c => c.characteristicUuid === UART_RX_Characteristic_UUID);
+  //       if (uartRxCharacteristic) {
+  //         await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
+  //         resolve();
+  //       } else {
+  //         reject(new Error('UART RX Characteristic not found'));
+  //       }
+  //     } catch (err) {
+  //       reject(err);
+  //     }
+  //   });
+  // }
+  //
+  // //通道2 写特征
+  // async readControlUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //       const uartRxCharacteristic = this.uart2gattServiceInfo?.characteristics.find(c => c.characteristicUuid === CONTROL_RX_CHARACTERISTIC_UUID);
+  //       if (uartRxCharacteristic) {
+  //         await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
+  //         resolve();
+  //       } else {
+  //         reject(new Error('CONTROL RX Characteristic not found'));
+  //       }
+  //     } catch (err) {
+  //       reject(err);
+  //     }
+  //   });
+  // }
+  //
+  // //通道3 写特征
+  // async readThirdUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //       const uartRxCharacteristic = this.uart3gattServiceInfo?.characteristics.find(c => c.characteristicUuid === THIRD_UART_RX_CHARACTERISTIC_UUID);
+  //       if (uartRxCharacteristic) {
+  //         await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
+  //         resolve();
+  //       } else {
+  //         reject(new Error('CONTROL RX Characteristic not found'));
+  //       }
+  //     } catch (err) {
+  //       reject(err);
+  //     }
+  //   });
+  // }
+  //
+  // //通道4 写特征
+  // async readFourthUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //       const uartRxCharacteristic = this.uart4gattServiceInfo?.characteristics.find(c => c.characteristicUuid === FOURTH_UART_RX_CHARACTERISTIC_UUID);
+  //       if (uartRxCharacteristic) {
+  //         await this.writeCharacteristicValue(data, this.gattClientDevice, uartRxCharacteristic);
+  //         resolve();
+  //       } else {
+  //         reject(new Error('CONTROL RX Characteristic not found'));
+  //       }
+  //     } catch (err) {
+  //       reject(err);
+  //     }
+  //   });
+  // }
 
 }
 
