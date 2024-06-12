@@ -157,7 +157,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   disconnect() {
     const gattClient = this.gattClientDevice
     if (gattClient) {
-      gattClient.off('BLEConnectionStateChange')
+      //gattClient.off('BLEConnectionStateChange')
       gattClient.disconnect()
     }
   }
@@ -419,9 +419,10 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  async writeUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  async writeUartRXCharacteristic(data: ArrayBuffer): Promise<ArrayBuffer> {
     const command = new BleCommand(this.gattClientDevice, UART_SERVICE_UUID, UART_RX_Characteristic_UUID, data);
     this.addCommand(1, command);
+    return command.awaitResponse()
   }
 
   /**

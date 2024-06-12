@@ -53,10 +53,6 @@ export class BleCommandManager{
   onDeviceResponse(channel: number, responseData: ArrayBuffer) {
     if (this.commands[channel] && this.commands[channel].length > 0) {
       this.commands[channel][0].onDeviceResponse(responseData);
-      this.commands[channel].shift();
-      if (this.commands[channel].length > 0) {
-        this.executeNextCommand(channel);
-      }
     }
   }
 

@@ -15,9 +15,13 @@ export class BleCommand {
   private currentRetries: number = 0;
 
   // 用于标识命令是否完成的标志
-  private resolveFn: (responseData:ArrayBuffer) => void = () => {};
+  private resolveFn: () => void = () => {};
   private rejectFn: (reason?: object) => void = () => {};
   private timer: number|null = null;
+
+  private resolve: ((value: ArrayBuffer | PromiseLike<ArrayBuffer>) => void) | null = null;
+  private reject: ((reason?: object) => void) | null = null;
+  private promise: Promise<ArrayBuffer>;
 
   /**
    * 创建一个新的蓝牙命令实例
@@ -42,14 +46,30 @@ export class BleCommand {
     this.data = data;
     this.timeout = timeout;
     this.retries = retries;
+
+    this.promise = new Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
+  }
+
+  fail(error: object) {
+    if (this.reject) {
+      this.reject(error);
+    }
+  }
+
+  awaitResponse(): Promise<ArrayBuffer> {
+    return this.promise;
   }
 
   /**
    * 执行命令
    * @returns Promise<void>
    */
-  execute(): Promise<ArrayBuffer> {
+  execute(): Promise<void> {
     return new Promise(async (resolve, reject) => {
+      console.log('NEW SDK 执行命令-> 开始')
       this.resolveFn = resolve;
       this.rejectFn = reject;
       if (!this.gatt) {
@@ -62,21 +82,21 @@ export class BleCommand {
       try {
         const service = gattServiceList.find(s => s.serviceUuid === this.serviceUuid);
         if (!service) {
-          return reject(`未找到服务 ${this.serviceUuid}`);
+          return reject(`NEW SDK 执行命令-> 未找到服务 ${this.serviceUuid}`);
         }
 
         const characteristic = service.characteristics.find(c => c.characteristicUuid === this.characteristicUuid);
         if (!characteristic) {
-          return reject(`未找到特征 ${this.characteristicUuid}`);
+          return reject(`NEW SDK 执行命令-> 未找到特征 ${this.characteristicUuid}`);
         }
 
         this.timer = setTimeout(() => {
-          if (this.currentRetries < this.retries) {
-            this.currentRetries++;
-            this.execute().then(resolve).catch(reject);
-          } else {
-            reject(`命令在 ${this.timeout}ms 后超时`);
-          }
+          // if (this.currentRetries < this.retries) {
+          //   this.currentRetries++;
+          //   this.execute().then(resolve).catch(reject);
+          // } else {
+            reject(`NEW SDK 执行命令-> 命令在 ${this.timeout}ms 后超时`);
+          // }
         }, this.timeout);
 
         await this.writeCharacteristicValue(this.data, this.gatt, characteristic);
@@ -91,8 +111,13 @@ export class BleCommand {
 
   // 当设备回复时调用
   onDeviceResponse(responseData: ArrayBuffer) {
+    console.log('NEW SDK 执行命令-> 结束 收到设备回复')
     clearTimeout(this.timer);
-    this.resolveFn(responseData);
+    this.resolveFn();
+    if (this.resolve) {
+      this.resolve(responseData);
+    }
+
   }
 
   /**
