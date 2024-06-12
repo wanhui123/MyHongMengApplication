@@ -15,7 +15,7 @@ export class BleCommand {
   private currentRetries: number = 0;
 
   // 用于标识命令是否完成的标志
-  private resolveFn: () => void = () => {};
+  private resolveFn: (responseData:ArrayBuffer) => void = () => {};
   private rejectFn: (reason?: object) => void = () => {};
   private timer: number|null = null;
 
@@ -48,7 +48,7 @@ export class BleCommand {
    * 执行命令
    * @returns Promise<void>
    */
-  execute(): Promise<void> {
+  execute(): Promise<ArrayBuffer> {
     return new Promise(async (resolve, reject) => {
       this.resolveFn = resolve;
       this.rejectFn = reject;
@@ -90,9 +90,9 @@ export class BleCommand {
   }
 
   // 当设备回复时调用
-  onDeviceResponse() {
+  onDeviceResponse(responseData: ArrayBuffer) {
     clearTimeout(this.timer);
-    this.resolveFn();
+    this.resolveFn(responseData);
   }
 
   /**

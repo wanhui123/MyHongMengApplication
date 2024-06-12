@@ -300,22 +300,22 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
           //通道1
           if(serviceUuid == UART_SERVICE_UUID){
             console.log(`NEW SDK Channel 1<------ Receive data: ${HexUtil.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
-            this.commandManager.onDeviceResponse(1);
+            this.commandManager.onDeviceResponse(1, characteristicValue);
           }
           //通道2
           else if (serviceUuid === CONTROL_UART_SERVICE_UUID){
             console.log(`NEW SDK Channel 2<------ Receive data: ${HexUtil.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
-            this.commandManager.onDeviceResponse(2);
+            this.commandManager.onDeviceResponse(2, characteristicValue);
           }
           //通道3
           else if (serviceUuid === THIRD_UART_SERVICE_UUID){
             console.log(`NEW SDK Channel 3<------ Receive data: ${HexUtil.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
-            this.commandManager.onDeviceResponse(3);
+            this.commandManager.onDeviceResponse(3, characteristicValue);
           }
           //通道4
           else if (serviceUuid === THIRD_UART_SERVICE_UUID){
             console.log(`NEW SDK Channel 4<------ Receive data: ${HexUtil.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
-            this.commandManager.onDeviceResponse(4);
+            this.commandManager.onDeviceResponse(4, characteristicValue);
           }
 
         })
