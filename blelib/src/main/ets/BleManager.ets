@@ -3,6 +3,7 @@ import { BusinessError } from '@kit.BasicServicesKit'
 import { HexUtil } from './utils/HexUtil'
 import { BleCommandManager } from './BleCommandManager'
 import { BleCommand } from './BleCommand'
+import { TransmitCompleteCommand } from './TransmitCompleteCommand'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -305,7 +306,14 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
           //通道2
           else if (serviceUuid === CONTROL_UART_SERVICE_UUID){
             console.log(`NEW SDK Channel 2<------ Receive data: ${HexUtil.arrayBufferToHex(characteristicValue)} , for: ${characteristicUuid} `)
-            this.commandManager.onDeviceResponse(2, characteristicValue);
+
+            //收到外设主动发送的信息(2代、3代、4代)
+            if(characteristicValue.byteLength > 0 && new Uint8Array(characteristicValue)[0] === 0x03){
+              const completeCommand = new TransmitCompleteCommand(characteristicValue)
+              console.log(`NEW SDK Channel 2 <-------收到外设主动发送的信息: ${HexUtil.arrayBufferToHex(characteristicValue)}`)
+              return
+            }
+            //this.commandManager.onDeviceResponse(2, characteristicValue);
           }
           //通道3
           else if (serviceUuid === THIRD_UART_SERVICE_UUID){
