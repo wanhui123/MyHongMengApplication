@@ -91,12 +91,14 @@ export class BleCommand {
         }
 
         this.timer = setTimeout(() => {
-          // if (this.currentRetries < this.retries) {
-          //   this.currentRetries++;
-          //   this.execute().then(resolve).catch(reject);
-          // } else {
+          if (this.currentRetries < this.retries) {
+            this.currentRetries++;
+            console.log(`NEW SDK 执行命令-> 超时重试 开始 第${this.currentRetries}次重试`)
+            this.execute().then(resolve).catch(reject);
+          } else {
+            console.log(`NEW SDK 执行命令-> 超时重试 结束 重试${this.currentRetries}次都失败了`)
             reject(`NEW SDK 执行命令-> 命令在 ${this.timeout}ms 后超时`);
-          // }
+          }
         }, this.timeout);
 
         await this.writeCharacteristicValue(this.data, this.gatt, characteristic);

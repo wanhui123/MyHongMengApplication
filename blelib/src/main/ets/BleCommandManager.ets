@@ -37,9 +37,9 @@ export class BleCommandManager{
 
     try {
       await command.execute();
-      console.log(`通道 ${channel} 命令执行成功`);
+      console.log(`NEW SDK 执行命令-> 通道 ${channel} 命令执行成功`);
     } catch (err) {
-      console.error(`通道 ${channel} 命令执行失败: ${err}`);
+      console.error(`NEW SDK 执行命令-> 通道 ${channel} 命令执行失败: ${err}`);
     } finally {
       this.waitingForResponse[channel] = false;
       this.commands[channel].shift();
