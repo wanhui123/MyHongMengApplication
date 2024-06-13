@@ -5,5 +5,9 @@
   "main": "Index.ets",
   "author": "",
   "license": "Apache-2.0",
-  "dependencies": {}
+  "dependencies": {
+    "long": "^5.2.1"
+  },
+  "devDependencies": {},
+  "dynamicDependencies": {}
 }

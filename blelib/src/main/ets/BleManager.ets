@@ -4,6 +4,9 @@ import { HexUtil } from './utils/HexUtil'
 import { BleCommandManager } from './BleCommandManager'
 import { BleCommand } from './BleCommand'
 import { TransmitCompleteCommand } from './TransmitCompleteCommand'
+import { common } from './proto/common'
+import { config } from './proto/config'
+import { Head20BytesInfo } from './command/Head20BytesInfo'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -536,8 +539,25 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    //-------------------------------------------  发送数据给设备 相关命令 -----------------------------------------
 
   //写入声音配置
-  writeSoundSetting(data: ArrayBuffer): Promise<ArrayBuffer> {
-    return this.writeUartRXCharacteristic(data)
+  writeSoundSetting(soundSetMsg: config.sound_set_msg): Promise<ArrayBuffer> {
+    const configMsg = config.config_msg.create({
+      serviceType: common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG,
+      configSeviceType:config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND,
+      configOperateType: config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET,
+      soundSetMessage: [soundSetMsg]
+    })
+    const sendPbBytes = config.config_msg.encode(configMsg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG)
+      .setMainOperationByte(config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_NONE)
+      .setSecondServiceByte(config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_NONE)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
+
+    return this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer)
   }
 
 

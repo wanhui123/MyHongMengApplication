@@ -6,7 +6,9 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@ohos/blebib": "file:../blelib"
-  }
+    "@ohos/blebib": "file:../blelib",
+    "long": "^5.2.1"
+  },
+  "devDependencies": {},
+  "dynamicDependencies": {}
 }
-
