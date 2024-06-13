@@ -1,6 +1,7 @@
 import { ble } from '@kit.ConnectivityKit';
 import { HexUtil } from './utils/HexUtil';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { TimeoutManager } from './TimeoutManager';
 
 /**
  * 基础命令类：包含通道信息、特征、数据、超时时间、重试机制等属性和方法。
@@ -17,11 +18,16 @@ export class BleCommand {
   // 用于标识命令是否完成的标志
   private resolveFn: () => void = () => {};
   private rejectFn: (reason?: object) => void = () => {};
-  private timer: number|null = null;
+  //private timer: number|null = null;
 
   private resolve: ((value: ArrayBuffer | PromiseLike<ArrayBuffer>) => void) | null = null;
   private reject: ((reason?: object) => void) | null = null;
   private promise: Promise<ArrayBuffer>;
+
+  //发送超时定时器
+  private sendTimeoutManager = new TimeoutManager();
+  //接收超时定时器
+  private receiveTimeoutManager = new TimeoutManager();
 
   /**
    * 创建一个新的蓝牙命令实例
@@ -90,13 +96,24 @@ export class BleCommand {
           return reject(`NEW SDK 执行命令-> 未找到特征 ${this.characteristicUuid}`);
         }
 
-        this.timer = setTimeout(() => {
+        // this.timer = setTimeout(() => {
+        //   if (this.currentRetries < this.retries) {
+        //     this.currentRetries++;
+        //     console.log(`NEW SDK 执行命令-> 超时重试 开始 第${this.currentRetries}次重试`)
+        //     this.execute().then(resolve).catch(reject);
+        //   } else {
+        //     console.log(`NEW SDK 执行命令-> 超时重试 结束 重试${this.currentRetries}次都失败了`)
+        //     reject(`NEW SDK 执行命令-> 命令在 ${this.timeout}ms 后超时`);
+        //   }
+        // }, this.timeout);
+
+        this.sendTimeoutManager.start(() => {
           if (this.currentRetries < this.retries) {
             this.currentRetries++;
-            console.log(`NEW SDK 执行命令-> 超时重试 开始 第${this.currentRetries}次重试`)
+            console.log(`NEW SDK 执行命令-> 超时重试 开始 第${this.currentRetries}次重试`);
             this.execute().then(resolve).catch(reject);
           } else {
-            console.log(`NEW SDK 执行命令-> 超时重试 结束 重试${this.currentRetries}次都失败了`)
+            console.log(`NEW SDK 执行命令-> 超时重试 结束 重试${this.currentRetries}次都失败了`);
             reject(`NEW SDK 执行命令-> 命令在 ${this.timeout}ms 后超时`);
           }
         }, this.timeout);
@@ -114,7 +131,8 @@ export class BleCommand {
   // 当设备回复时调用
   onDeviceResponse(responseData: ArrayBuffer) {
     console.log('NEW SDK 执行命令-> 结束 收到设备回复')
-    clearTimeout(this.timer);
+    //clearTimeout(this.timer);
+    this.sendTimeoutManager.cancel();
     this.resolveFn();
     if (this.resolve) {
       this.resolve(responseData);
