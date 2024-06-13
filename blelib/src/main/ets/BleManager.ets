@@ -337,7 +337,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   }
 
   //写特征值
-  async writeCharacteristicValue(
+  private async writeCharacteristicValue(
     data: ArrayBuffer,
     gatt: ble.GattClientDevice | null | undefined,
     characteristic: ble.BLECharacteristic,
@@ -371,7 +371,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   /**
    * client端读取蓝牙低功耗设备特定服务的特征值 (读取指定通道的特征)
    */
-  async readCharacteristicValue(
+  private async readCharacteristicValue(
     gatt: ble.GattClientDevice | null | undefined,
     characteristic: ble.BLECharacteristic,
   ): Promise<ArrayBuffer | null> {
@@ -398,22 +398,6 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
 
   /**
-   * 读取电池电量
-   */
-  async readBattery() : Promise<ArrayBuffer | null>{
-    const batteryCharacteristic = this.batteryGattServiceInfo?.characteristics.find(c => c.characteristicUuid === BATTERY_LEVEL_CHARACTERISTIC_UUID);
-    if(batteryCharacteristic){
-      try {
-        const characteristicValue = await this.readCharacteristicValue(this.gattClientDevice, batteryCharacteristic)
-        return characteristicValue
-      }catch (error) {
-        console.error('Error occurred while reading characteristic value:', error);
-      }
-    }
-    return null
-  }
-
-  /**
    * 添加命令并执行
    * @param channel 通道编号
    * @param command 命令实例
@@ -427,7 +411,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  async writeUartRXCharacteristic(data: ArrayBuffer): Promise<ArrayBuffer> {
+  private async writeUartRXCharacteristic(data: ArrayBuffer): Promise<ArrayBuffer> {
     const command = new BleCommand(this.gattClientDevice, UART_SERVICE_UUID, UART_RX_Characteristic_UUID, data);
     this.addCommand(1, command);
     return command.awaitResponse()
@@ -438,7 +422,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  async writeControlUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  private async writeControlUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
     const command = new BleCommand(this.gattClientDevice, CONTROL_UART_SERVICE_UUID, CONTROL_RX_CHARACTERISTIC_UUID, data);
     this.addCommand(2, command);
   }
@@ -448,7 +432,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  async writeThirdUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  private async writeThirdUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
     const command = new BleCommand(this.gattClientDevice, THIRD_UART_SERVICE_UUID, THIRD_UART_RX_CHARACTERISTIC_UUID, data);
     this.addCommand(3, command);
   }
@@ -458,7 +442,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  async writeFourthUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  private async writeFourthUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
     const command = new BleCommand(this.gattClientDevice, FOURTH_UART_SERVICE_UUID, FOURTH_UART_RX_CHARACTERISTIC_UUID, data);
     this.addCommand(4, command);
   }
@@ -530,6 +514,33 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   //     }
   //   });
   // }
+
+  //-------------------------------------------  读取设备特征相关 -----------------------------------------
+
+  /**
+   * 读取电池电量
+   */
+  async readBattery() : Promise<ArrayBuffer | null>{
+    const batteryCharacteristic = this.batteryGattServiceInfo?.characteristics.find(c => c.characteristicUuid === BATTERY_LEVEL_CHARACTERISTIC_UUID);
+    if(batteryCharacteristic){
+      try {
+        const characteristicValue = await this.readCharacteristicValue(this.gattClientDevice, batteryCharacteristic)
+        return characteristicValue
+      }catch (error) {
+        console.error('Error occurred while reading characteristic value:', error);
+      }
+    }
+    return null
+  }
+
+   //-------------------------------------------  发送数据给设备 相关命令 -----------------------------------------
+
+  //写入声音配置
+  writeSoundSetting(data: ArrayBuffer): Promise<ArrayBuffer> {
+    return this.writeUartRXCharacteristic(data)
+  }
+
+
 
 }
 
