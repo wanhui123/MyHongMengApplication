@@ -134,4 +134,17 @@ export class HexUtil{
     return mergedArray;
   }
 
+  /**
+   * 截取指定长度数组
+   * @param src 源数组
+   * @param begin 起始索引
+   * @param count 需要截取的长度
+   * @returns 截取后的数组
+   */
+  public static subBytes(src: Uint8Array, begin: number, count: number): Uint8Array {
+    const bs = new Uint8Array(count);
+    bs.set(src.subarray(begin, begin + count));
+    return bs;
+  }
+
 }

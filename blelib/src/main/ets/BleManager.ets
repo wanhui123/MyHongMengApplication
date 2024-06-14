@@ -414,8 +414,9 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  private async writeUartRXCharacteristic(data: ArrayBuffer): Promise<ArrayBuffer> {
+  private async writeUartRXCharacteristic(data: ArrayBuffer, isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null): Promise<ArrayBuffer> {
     const command = new BleCommand(this.gattClientDevice, UART_SERVICE_UUID, UART_RX_Characteristic_UUID, data);
+    command.isReceiveFinish = isReceiveFinish
     this.addCommand(1, command);
     return command.awaitResponse()
   }
@@ -550,14 +551,24 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
     const headByteArray = new Head20BytesInfo()
       .setMainServiceType(common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG)
-      .setMainOperationByte(config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_NONE)
-      .setSecondServiceByte(config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_NONE)
+      .setMainOperationByte(config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET)
+      .setSecondServiceByte(config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND)
       .setPbDataBytes(sendPbBytes)
       .confirmCommandByteArray()
 
     const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
 
-    return this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer)
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
+        && completeCommand.mainOperation === config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET
+        && completeCommand.secondService === config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND;
+    }
+
+    return this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
   }
 
 
