@@ -3,7 +3,7 @@ import { promptAction, router } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import Utils from '../utils/Util';
 
-import { BleManager, config } from '@ohos/blebib'
+import { BleManager, common, config } from '@ohos/blebib'
 
 @Entry
 @Component
@@ -180,6 +180,22 @@ struct ClientDetail {
             .width('100%')
         }
 
+        //读取活动列表信息
+        Row() {
+          Button('读取活动列表信息').onClick(() => {
+            this.bleManager.readActivityListInformation().then((response: common.Ifile_list_get_message|undefined|null) => {
+              console.log(`读取活动列表信息 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'读取活动列表信息成功'})
+            }).catch((error:Error) => {
+              console.error('读取活动列表信息 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'读取活动列表信息失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
 
       }
       .width('100%')

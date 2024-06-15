@@ -7,6 +7,7 @@ import { TransmitCompleteCommand } from './TransmitCompleteCommand'
 import { common } from './proto/common'
 import { config } from './proto/config'
 import { Head20BytesInfo } from './command/Head20BytesInfo'
+import { cycling_data } from './proto/cycling_data'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -436,9 +437,11 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  private async writeThirdUartRXCharacteristic(data: ArrayBuffer): Promise<void> {
+  private async writeThirdUartRXCharacteristic(data: ArrayBuffer, isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null): Promise<ArrayBuffer> {
     const command = new BleCommand(this.gattClientDevice, THIRD_UART_SERVICE_UUID, THIRD_UART_RX_CHARACTERISTIC_UUID, data);
+    command.isReceiveFinish = isReceiveFinish
     this.addCommand(3, command);
+    return command.awaitResponse()
   }
 
   /**
@@ -571,6 +574,35 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     return this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
   }
 
+   //读取活动列表信息
+  async readActivityListInformation(): Promise<common.Ifile_list_get_message|undefined|null> {
+    const msg = cycling_data.cycling_data_msg.create({
+      serviceType: common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA,
+      cyclingDataOperateType: cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET,
+    })
+    const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA)
+      .setMainOperationByte(cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
+        && completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET;
+    }
+
+    const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    const responseData:common.Ifile_list_get_message|undefined|null = cycling_data.cycling_data_msg.decode(new Uint8Array(responseBytes)).listMsg
+    return responseData
+  }
 
 
 }
