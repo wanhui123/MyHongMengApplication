@@ -4,6 +4,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import Utils from '../utils/Util';
 
 import { BleManager, common, config } from '@ohos/blebib'
+import { FitActivityListInfo } from '@ohos/blebib/src/main/ets/data/FitActivityListInfo';
 
 @Entry
 @Component
@@ -191,6 +192,29 @@ struct ClientDetail {
               console.error('读取活动列表信息 failed:', error.message);
               //提示写入失败
               promptAction.showToast({message:'读取活动列表信息失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
+        //读取活动列表
+        Row() {
+          Button('读取活动列表').onClick(() => {
+
+            const range = common.file_list_get_message.create({
+              fileIndexStart: 0,
+              fileIndexEnd: 1
+            })
+
+            this.bleManager.readActivityList(range).then((response: FitActivityListInfo[]) => {
+              console.log(`读取活动列表 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'读取活动列表 成功'})
+            }).catch((error:Error) => {
+              console.error('读取活动列表 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'读取活动列表 失败'})
             })
           })
             .type(ButtonType.Normal)

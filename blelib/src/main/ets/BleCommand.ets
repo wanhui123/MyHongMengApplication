@@ -54,7 +54,7 @@ export class BleCommand {
     characteristicUuid: string,
     data: ArrayBuffer,
     timeout: number = 5000,
-    retries: number = 3
+    retries: number = 0
   ) {
     this.gatt = gatt;
     this.serviceUuid = serviceUuid;

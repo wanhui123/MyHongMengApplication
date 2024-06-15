@@ -8,6 +8,8 @@ import { common } from './proto/common'
 import { config } from './proto/config'
 import { Head20BytesInfo } from './command/Head20BytesInfo'
 import { cycling_data } from './proto/cycling_data'
+import { FitUtil } from './utils/FitUtil'
+import { FitActivityListInfo } from './data/FitActivityListInfo'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -601,6 +603,42 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
     const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
     const responseData:common.Ifile_list_get_message|undefined|null = cycling_data.cycling_data_msg.decode(new Uint8Array(responseBytes)).listMsg
+    return responseData
+  }
+
+  //读取活动列表
+  async readActivityList(range: common.file_list_get_message | null = null): Promise<FitActivityListInfo[]> {
+    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
+    const commandOperateType = cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_GET
+    const commandTag = "readActivityList"
+
+    const msg = cycling_data.cycling_data_msg.create({
+      serviceType: commandServiceType,
+      cyclingDataOperateType: commandOperateType,
+      listMsg: range
+    })
+    const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(commandServiceType)
+      .setMainOperationByte(commandOperateType)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === commandServiceType
+        && (completeCommand.mainOperation === commandOperateType
+          || completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_SEND);
+    }
+
+    const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    const responseData = FitUtil.parseActivityList(responseBytes)
     return responseData
   }
 
