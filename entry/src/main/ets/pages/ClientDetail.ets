@@ -5,6 +5,7 @@ import Utils from '../utils/Util';
 
 import { BleManager, common, config } from '@ohos/blebib'
 import { FitActivityListInfo } from '@ohos/blebib/src/main/ets/data/FitActivityListInfo';
+import { FileDownloadResult } from '@ohos/blebib/src/main/ets/utils/FileUtil';
 
 @Entry
 @Component
@@ -215,6 +216,29 @@ struct ClientDetail {
               console.error('读取活动列表 failed:', error.message);
               //提示写入失败
               promptAction.showToast({message:'读取活动列表 失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
+        //读取活动fit文件
+        Row() {
+          Button('读取活动fit文件').onClick(() => {
+
+            const range = common.file_list_get_message.create({
+              fileIndexStart: 0,
+              fileIndexEnd: 1
+            })
+
+            this.bleManager.readActivityFitFile(1065435805).then((response: FileDownloadResult) => {
+              console.log(`读取活动fit文件 response:${JSON.stringify(response.fileInfo)}, ${response.file.length} `)
+              //提示写入成功
+              promptAction.showToast({message:'读取活动fit文件 成功'})
+            }).catch((error:Error) => {
+              console.error('读取活动fit文件 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'读取活动fit文件 失败'})
             })
           })
             .type(ButtonType.Normal)

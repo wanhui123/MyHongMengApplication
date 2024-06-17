@@ -48,14 +48,27 @@ export class BaseHeaderData {
       ...Array.from(this.getReservedByteArray(8))//11..18
     ]);
 
-    return this.updateCRC(data);
+    return BaseHeaderData.updateCRC(data);
   }
 
   // 更新 CRC
-  updateCRC(noneCrcData: Uint8Array): Uint8Array {
-    const crc = CRC8.makeCRC8(noneCrcData, 0, noneCrcData.length);
-    const crcByteArray = new Uint8Array([...noneCrcData, crc]);
-    return crcByteArray;
+  // public static updateCRC(noneCrcData: Uint8Array): Uint8Array {
+  //   const crc = CRC8.makeCRC8(noneCrcData, 0, noneCrcData.length);
+  //   const crcByteArray = new Uint8Array([...noneCrcData, crc]);
+  //   return crcByteArray;
+  // }
+
+  // 更新 CRC
+  public static updateCRC(data: Uint8Array): Uint8Array {
+    const noneCRCByteArray = new Uint8Array(19);
+    noneCRCByteArray.set(data.subarray(0, noneCRCByteArray.length));
+
+    const crc = CRC8.makeCRC8(noneCRCByteArray, 0, noneCRCByteArray.length);
+    const result = new Uint8Array(noneCRCByteArray.length + 1);
+    result.set(noneCRCByteArray);
+    result[noneCRCByteArray.length] = crc;
+
+    return result;
   }
 
   ///预留字段

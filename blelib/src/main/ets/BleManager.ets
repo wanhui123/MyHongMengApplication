@@ -10,6 +10,8 @@ import { Head20BytesInfo } from './command/Head20BytesInfo'
 import { cycling_data } from './proto/cycling_data'
 import { FitUtil } from './utils/FitUtil'
 import { FitActivityListInfo } from './data/FitActivityListInfo'
+import { BaseHeaderData } from './command/BaseHeaderData'
+import { FileDownloadResult, FileUtil } from './utils/FileUtil'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -641,6 +643,48 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     const responseData = FitUtil.parseActivityList(responseBytes)
     return responseData
   }
+
+  //获取某一条活动FIT文件
+  async readActivityFitFile(id: number): Promise<FileDownloadResult> {
+    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
+    const commandOperateType = cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_FILE_GET
+    const commandTag = "readActivityFitFile"
+
+    const msg = cycling_data.cycling_data_msg.create({
+      serviceType: commandServiceType,
+      cyclingDataOperateType: commandOperateType,
+      cyclingDataFileFlagMsg: [
+        cycling_data.cycling_data_file_flag_message.create({
+          timestamp: id
+        })
+      ]
+    })
+    const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(commandServiceType)
+      .setMainOperationByte(commandOperateType)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+    let head = new TransmitCompleteCommand(headByteArray.buffer as ArrayBuffer).getByteArray()
+    head[3] = 0x55 //获取文件标识（文件上传或者文件下载需要）
+
+    const sendData = HexUtil.byteMerger(BaseHeaderData.updateCRC(head), sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === commandServiceType
+        && completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_FILE_SEND;
+    }
+
+    const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    const responseData = FileUtil.getFileInfoAndFile(responseBytes)
+    return responseData
+  }
+
 
 
 }
