@@ -103,7 +103,15 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * 连接设备
    */
   connect(device: ble.ScanResult): ble.GattClientDevice | null {
-    const clientDevice = ble.createGattClientDevice(device?.deviceId)
+    return this.connectById(device?.deviceId)
+  }
+
+  /**
+   * 通过deviceId(address)连接设备
+   * @param deviceId
+   */
+  connectById(deviceId: string): ble.GattClientDevice | null{
+    const clientDevice = ble.createGattClientDevice(deviceId)
     this.gattClientDevice = clientDevice
     if (clientDevice) {
 

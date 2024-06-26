@@ -63,7 +63,7 @@ struct ClientDetail {
           Text('连接状态')
           Blank()
 
-          if (this.bleManager.isReady()) {
+          if (this.devConnectState == DeviceConnectStatus.DeviceConnecting || this.devConnectState == DeviceConnectStatus.DeviceConnected) {
             LoadingProgress().height(15).width(15)
           } else {
             Toggle({ type: ToggleType.Switch, isOn: this.connectStateSwitch })
