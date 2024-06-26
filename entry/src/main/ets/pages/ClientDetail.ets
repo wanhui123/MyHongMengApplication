@@ -238,6 +238,49 @@ struct ClientDetail {
             .width('100%')
         }
 
+        //读取自动配置
+        Row() {
+          Button('读取自动配置').onClick(() => {
+            this.bleManager.readAutomaticSetting().then((response: config.Iauto_set_msg[]) => {
+              console.log(`读取自动配置 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'读取自动配置 成功'})
+            }).catch((error:Error) => {
+              console.error('读取自动配置 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'读取自动配置 失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
+        //写入自动配置
+        Row() {
+          Button('写入自动配置').onClick(() => {
+            this.bleManager.writeAutomaticSetting(
+              config.auto_set_msg.create({
+                status: 1,
+                autoType: config.AUTO_TYPE.enum_SLEEP
+              }),
+              config.auto_set_msg.create({
+                status: 1,
+                autoType: config.AUTO_TYPE.enum_POWER_OFF
+              }),
+            ).then((response: boolean) => {
+              console.log(`写入自动配置 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'写入自动配置 成功'})
+            }).catch((error:Error) => {
+              console.error('写入自动配置 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'写入自动配置 失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
       }
       .width('100%')
       .padding({

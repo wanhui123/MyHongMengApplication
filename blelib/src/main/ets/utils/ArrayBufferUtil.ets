@@ -61,4 +61,28 @@ export class ArrayBufferUtil {
   public static toByteArray(buffer: ArrayBuffer): Uint8Array {
     return new Uint8Array(buffer);
   }
+
+  // head[7] 等于 00 表示命令成功 其他表示失败
+  public static  isCommandStatusSuccess(headerBytes: ArrayBuffer | Uint8Array | null): boolean | null {
+    try {
+      if (headerBytes) {
+        let view: Uint8Array;
+
+        // 检查 headerBytes 是 ArrayBuffer 还是 Uint8Array，并进行相应处理
+        if (headerBytes instanceof ArrayBuffer) {
+          view = new Uint8Array(headerBytes);
+        } else {
+          view = headerBytes;
+        }
+
+        // 确保视图长度大于 7
+        if (view.length > 7) {
+          return view[7] === 0x00;
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

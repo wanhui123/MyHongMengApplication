@@ -14,6 +14,7 @@ import { BaseHeaderData } from './command/BaseHeaderData'
 import { FileDownloadResult, FileUtil } from './utils/FileUtil'
 import { DeviceConnectStatus } from './data/DeviceConnectStatus'
 import Observable from './utils/Observable'
+import { ArrayBufferUtil } from './utils/ArrayBufferUtil'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -688,7 +689,86 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     return responseData
   }
 
+  /**
+   * 读取自动配置
+   */
+  async readAutomaticSetting(): Promise<config.Iauto_set_msg[]> {
+    const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
+    const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_AUTO
+    const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_GET
+    const commandTag = "readAutomaticSetting"
 
+    const configMsg = config.config_msg.create({
+      serviceType: commandMainServiceType,
+      configSeviceType:configServiceType,
+      configOperateType: configOperateType,
+    })
+    const sendPbBytes = config.config_msg.encode(configMsg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(commandMainServiceType)
+      .setMainOperationByte(configOperateType)
+      .setSecondServiceByte(configServiceType)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === commandMainServiceType
+        && completeCommand.secondService === configServiceType
+        && completeCommand.mainOperation === configOperateType
+    }
+
+    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    const responseData:config.Iauto_set_msg[] = config.config_msg.decode(new Uint8Array(responseBytes)).autoSetMessage
+    return responseData
+
+  }
+
+  /**
+   * 写入自动配置
+   */
+  async writeAutomaticSetting(...configs: config.auto_set_msg[]): Promise<boolean> {
+    const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
+    const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_AUTO
+    const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET
+    const commandTag = "writeAutomaticSetting"
+
+    const configMsg = config.config_msg.create({
+      serviceType: commandMainServiceType,
+      configSeviceType:configServiceType,
+      configOperateType: configOperateType,
+      autoSetMessage: configs,
+    })
+    const sendPbBytes = config.config_msg.encode(configMsg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(commandMainServiceType)
+      .setMainOperationByte(configOperateType)
+      .setSecondServiceByte(configServiceType)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === commandMainServiceType
+        && completeCommand.secondService === configServiceType
+        && completeCommand.mainOperation === configOperateType
+    }
+
+    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
+  }
 
 }
 
