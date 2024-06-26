@@ -12,6 +12,8 @@ import { FitUtil } from './utils/FitUtil'
 import { FitActivityListInfo } from './data/FitActivityListInfo'
 import { BaseHeaderData } from './command/BaseHeaderData'
 import { FileDownloadResult, FileUtil } from './utils/FileUtil'
+import { DeviceConnectStatus } from './data/DeviceConnectStatus'
+import Observable from './utils/Observable'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -55,10 +57,8 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   //电池 的服务信息
   batteryGattServiceInfo: ble.GattService | undefined = undefined;
 
-  //连接状态
-  private connectionState: ble.BLEConnectionChangeState | null = null;
-  //连接状态观察者
-  private connectionStateObservers: ((state: ble.BLEConnectionChangeState | null) => void)[] = [];
+  //设备连接状态
+  deviceConnectStatus = new Observable<DeviceConnectStatus>();
 
   private constructor() {
     this.commandManager = new BleCommandManager();
@@ -70,36 +70,6 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
   public init(): void{
     console.log("BleManager initialization")
-  }
-
-  // 设置连接状态，并通知观察者（连接状态）
-  private setConnectionState(state: ble.BLEConnectionChangeState | null) {
-    this.connectionState = state;
-    this.notifyObservers();
-  }
-
-  // 添加观察者（连接状态）
-  addObserver(observer: (state: ble.BLEConnectionChangeState | null) => void) {
-    this.connectionStateObservers.push(observer);
-    // 如果连接状态已经存在，则立即通知观察者
-    if (this.connectionState !== null) {
-      observer(this.connectionState);
-    }
-  }
-
-  // 移除观察者（连接状态）
-  removeObserver(observer: (state: ble.BLEConnectionChangeState | null) => void) {
-    const index = this.connectionStateObservers.indexOf(observer);
-    if (index !== -1) {
-      this.connectionStateObservers.splice(index, 1);
-    }
-  }
-
-  // 通知观察者连接状态变化（连接状态）
-  private notifyObservers() {
-    for (const observer of this.connectionStateObservers) {
-      observer(this.connectionState);
-    }
   }
 
   /**
@@ -124,6 +94,11 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     });
   }
 
+  //设备连接成功且通道加载完成
+  isReady(): boolean {
+    return this.deviceConnectStatus.getData() == DeviceConnectStatus.DeviceReady;
+  }
+
   /**
    * 连接设备
    */
@@ -134,19 +109,33 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
       //连接状态
       clientDevice.on('BLEConnectionStateChange', (state: ble.BLEConnectionChangeState) => {
-        console.log('BluetoothPage bluetooth connect state changed');
-        let deviceId = state.deviceId;
-        console.log('BluetoothPage deviceId connectState ' + deviceId);
+        //let deviceId = state.deviceId;
         const connectState = state.state;
+        console.log(`连接状态改变 state ${JSON.stringify(state)}`);
 
-        console.log('BluetoothPage bluetooth connectState ' + JSON.stringify(state));
+        switch (connectState) {
+          case constant.ProfileConnectionState.STATE_DISCONNECTED: // 设备已断开连接
+            this.deviceConnectStatus.notify(DeviceConnectStatus.DeviceDisconnected);
+            break;
 
-        //已连接
-        if (connectState == constant.ProfileConnectionState.STATE_CONNECTED) {
-          this.getServices()
+          case constant.ProfileConnectionState.STATE_CONNECTING: // 设备正在连接
+            this.deviceConnectStatus.notify(DeviceConnectStatus.DeviceConnecting);
+            break;
+
+          case constant.ProfileConnectionState.STATE_CONNECTED: // 设备已连接
+            this.deviceConnectStatus.notify(DeviceConnectStatus.DeviceConnected);
+            this.getServices();
+            break;
+
+          case constant.ProfileConnectionState.STATE_DISCONNECTING: // 设备正在断开连接
+            this.deviceConnectStatus.notify(DeviceConnectStatus.DeviceDisconnecting);
+            break;
+
+          default:
+          // Handle unexpected states if necessary
+            break;
         }
-        
-        this.setConnectionState(state); // 设置连接状态
+
       })
 
       //连接
@@ -253,8 +242,14 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
         //this.onBLEMtuChange()
 
         //接收设备数据
-        this.onBleCharacteristicChange()
+        //this.onBleCharacteristicChange()
       }
+
+      //接收设备数据
+      this.onBleCharacteristicChange()
+
+      //通道加载完成
+      this.deviceConnectStatus.notify(DeviceConnectStatus.DeviceReady)
     }
   }
 

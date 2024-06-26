@@ -6,6 +6,7 @@ import Utils from '../utils/Util';
 import { BleManager, common, config } from '@ohos/blebib'
 import { FitActivityListInfo } from '@ohos/blebib/src/main/ets/data/FitActivityListInfo';
 import { FileDownloadResult } from '@ohos/blebib/src/main/ets/utils/FileUtil';
+import { DeviceConnectStatus } from '@ohos/blebib/src/main/ets/data/DeviceConnectStatus';
 
 @Entry
 @Component
@@ -23,38 +24,29 @@ struct ClientDetail {
   //是否连接成功
   @State connectStateSwitch: boolean = false;
   //连接状态
-  @State connectState: ble.ProfileConnectionState = constant.ProfileConnectionState.STATE_DISCONNECTED;
+  @State devConnectState: DeviceConnectStatus = DeviceConnectStatus.DeviceDisconnected;
 
   //读取的电池特征（电量）
   @State characteristicValue: string = '';
 
-  //连接状态变化监听
-  observerToRemove = (state: ble.BLEConnectionChangeState | null) => {
-    // 观察者函数的逻辑
-    let deviceId = state?.deviceId;
-    console.log('蓝牙连接状态改变 state = ' + JSON.stringify(state?.state) + ', deviceId' + deviceId);
-    if(state == null){
-      return
-    }
-    this.connectState = state.state;
+  // 设备连接状态观察者
+  deviceConnectStatusObserver = (connectStatus: DeviceConnectStatus) => {
+    console.log(`设备连接状态观察者-> connectStatusObserver ${DeviceConnectStatus[connectStatus]}`);
 
-    //已断开连接
-    if (this.connectState == constant.ProfileConnectionState.STATE_DISCONNECTED) {
+    if (connectStatus == DeviceConnectStatus.DeviceReady) {
+      this.connectStateSwitch = true;
+    } else{
       this.connectStateSwitch = false;
     }
-
-    //已连接
-    if (this.connectState == constant.ProfileConnectionState.STATE_CONNECTED) {
-      this.connectStateSwitch = true;
-    }
+    this.devConnectState = connectStatus
   };
 
   aboutToAppear(): void {
-    this.bleManager.addObserver(this.observerToRemove)
+    this.bleManager.deviceConnectStatus.subscribe(this.deviceConnectStatusObserver)
   }
 
   aboutToDisappear(): void {
-    this.bleManager.removeObserver(this.observerToRemove);
+    this.bleManager.deviceConnectStatus.unsubscribe(this.deviceConnectStatusObserver)
   }
 
   build() {
@@ -70,7 +62,8 @@ struct ClientDetail {
         Row() {
           Text('连接状态')
           Blank()
-          if (this.connectState == constant.ProfileConnectionState.STATE_CONNECTING) {
+
+          if (this.bleManager.isReady()) {
             LoadingProgress().height(15).width(15)
           } else {
             Toggle({ type: ToggleType.Switch, isOn: this.connectStateSwitch })
@@ -262,7 +255,7 @@ struct ClientDetail {
    * client端发起连接远端蓝牙低功耗设备 （连接ble设备）
    */
   connectServer() {
-    if (this.connectState != constant.ProfileConnectionState.STATE_CONNECTED) {
+    if (!this.bleManager.isReady()) {
       //连接设备
       this.gattClient = this.bleManager.connect(this.device)!;
 
@@ -279,9 +272,7 @@ struct ClientDetail {
    * client端断开与远端蓝牙低功耗设备的连接 （断开ble设备）
    */
   disconnectServer() {
-    if (this.connectState != constant.ProfileConnectionState.STATE_DISCONNECTED) {
-      this.bleManager.disconnect()
-    }
+    this.bleManager.disconnect()
   }
 
 }
