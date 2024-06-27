@@ -109,7 +109,7 @@ export class ConfigService {
    * @param mode 骑行模式
    * @returns
    */
-  async readAlarmConfig(mode: number|null = null): Promise<config.Ialarm_msg[]>{
+  async readAlarmConfig(mode: number | null = null): Promise<config.Ialarm_msg[]> {
     const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
     const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_ALARM
     const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_GET
@@ -138,7 +138,7 @@ export class ConfigService {
       configSeviceType: configServiceType,
       configOperateType: configOperateType,
       curOperateMode: mode,
-      alarmMessage:alarmMsgs
+      alarmMessage: alarmMsgs
     })
 
     const responseBytes = await this.sendConfigCommand(commandMainServiceType, configServiceType, configOperateType, configMsg)
@@ -150,7 +150,7 @@ export class ConfigService {
    * @param mode 模式下标 0-7：返回单个页面配置 8种模式 （默认4种模式：骑行、通勤、旅行、室内）
    *
    */
-  async readPage(mode: number | null = null): Promise<config.Ipage_msg[]>{
+  async readPage(mode: number | null = null): Promise<config.Ipage_msg[]> {
     const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
     const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_PAGE
     const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_GET
@@ -169,7 +169,7 @@ export class ConfigService {
   /**
    * 写入页面配置
    */
-  async writePage(mode: number | null = null, ...pageMsgs:config.page_msg[]){
+  async writePage(mode: number | null = null, ...pageMsgs: config.page_msg[]): Promise<boolean> {
     const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
     const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_PAGE
     const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET
@@ -186,6 +186,40 @@ export class ConfigService {
     return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
   }
 
+  /**
+   * 读取公英制配置信息
+   */
+  async readUnit(): Promise<config.Iunit_msg[]> {
+    const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
+    const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_UNIT
+    const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_GET
 
+    const configMsg = config.config_msg.create({
+      serviceType: commandMainServiceType,
+      configSeviceType: configServiceType,
+      configOperateType: configOperateType,
+    })
 
+    const responseBytes = await this.sendConfigCommand(commandMainServiceType, configServiceType, configOperateType, configMsg)
+    return config.config_msg.decode(new Uint8Array(responseBytes)).unitMessage
+  }
+
+  /**
+   * 配置公英制
+   */
+  async writeUnit(...unitMsgs: config.unit_msg[]): Promise<boolean> {
+    const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
+    const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_UNIT
+    const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET
+
+    const configMsg = config.config_msg.create({
+      serviceType: commandMainServiceType,
+      configSeviceType: configServiceType,
+      configOperateType: configOperateType,
+      unitMessage: unitMsgs
+    })
+
+    const responseBytes = await this.sendConfigCommand(commandMainServiceType, configServiceType, configOperateType, configMsg)
+    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
+  }
 }

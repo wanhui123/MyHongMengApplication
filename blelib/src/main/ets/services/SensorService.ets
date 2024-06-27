@@ -14,7 +14,7 @@ export class SensorService {
   }
 
   //读取传感器列表
-  async readSensorList():Promise<sensor.Isensor_data_message[]> {
+  async readSensorList(): Promise<sensor.Isensor_data_message[]> {
     const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
     const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_GET
     const commandTag = "readSensorList"
@@ -44,7 +44,8 @@ export class SensorService {
     }
 
     const responseBytes = await this.deviceBleManager.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    const responseData:sensor.Isensor_data_message[] = sensor.sensor_message.decode(new Uint8Array(responseBytes)).sensorDataMsg
+    const responseData: sensor.Isensor_data_message[] = sensor.sensor_message.decode(new Uint8Array(responseBytes))
+      .sensorDataMsg
     return responseData
   }
 
@@ -57,7 +58,7 @@ export class SensorService {
     const msg = sensor.sensor_message.create({
       serviceType: commandServiceType,
       sensorOperateType: commandOperateType,
-      sensorDataMsg:[sensorDataMsg]
+      sensorDataMsg: [sensorDataMsg]
     })
 
     const sendPbBytes = sensor.sensor_message.encode(msg).finish()
@@ -92,7 +93,7 @@ export class SensorService {
     const msg = sensor.sensor_message.create({
       serviceType: commandServiceType,
       sensorOperateType: commandOperateType,
-      sensorDataMsg:[sensorDataMsg]
+      sensorDataMsg: [sensorDataMsg]
     })
 
     const sendPbBytes = sensor.sensor_message.encode(msg).finish()
@@ -161,7 +162,7 @@ export class SensorService {
     const msg = sensor.sensor_message.create({
       serviceType: commandServiceType,
       sensorOperateType: commandOperateType,
-      sensorDataMsg:[sensorDataMsg]
+      sensorDataMsg: [sensorDataMsg]
     })
 
     const sendPbBytes = sensor.sensor_message.encode(msg).finish()
@@ -188,7 +189,7 @@ export class SensorService {
   }
 
   //退出传感器设置界面
-  async exitSensorPage() {
+  async exitSensorPage(): Promise<boolean> {
     const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
     const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_EXIT
     const commandTag = "exitSensorPage"
@@ -220,5 +221,4 @@ export class SensorService {
     const responseBytes = await this.deviceBleManager.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
     return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
   }
-
 }
