@@ -125,7 +125,7 @@ struct ClientDetail {
             //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 6A 03 FF 01 FF FF 00 0A A8 01 FF FF FF FF FF FF FF FF F9 08 6A 10 01 18 03 62 02 08 40")//VS1800 自定义模式设置
             //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F F4 01 FF FF FF FF FF FF FF FF E7 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 01")
             console.log(`UART RX Characteristic write start responseData `)
-            this.bleManager.writeSoundSetting(soundSetMsg).then((response: ArrayBuffer) => {
+            this.bleManager.configService.writeSoundSetting(soundSetMsg).then((response: ArrayBuffer) => {
               console.log(`UART RX Characteristic write end response:${Utils.arrayBufferToHex(response)} `)
               //提示写入成功
               promptAction.showToast({message:'写入成功'})
@@ -160,7 +160,7 @@ struct ClientDetail {
             })
 
             //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F AA 01 FF FF FF FF FF FF FF FF 32 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 00")
-            this.bleManager.writeSoundSetting(soundSetMsg).then((response: ArrayBuffer) => {
+            this.bleManager.configService.writeSoundSetting(soundSetMsg).then((response: ArrayBuffer) => {
               //console.log('UART RX Characteristic write successful');
               console.log(`UART RX Characteristic write end response:${Utils.arrayBufferToHex(response)} `)
               //提示写入成功
@@ -178,7 +178,7 @@ struct ClientDetail {
         //读取活动列表信息
         Row() {
           Button('读取活动列表信息').onClick(() => {
-            this.bleManager.readActivityListInformation().then((response: common.Ifile_list_get_message|undefined|null) => {
+            this.bleManager.activityService.readActivityListInformation().then((response: common.Ifile_list_get_message|undefined|null) => {
               console.log(`读取活动列表信息 response:${JSON.stringify(response)} `)
               //提示写入成功
               promptAction.showToast({message:'读取活动列表信息成功'})
@@ -201,7 +201,7 @@ struct ClientDetail {
               fileIndexEnd: 1
             })
 
-            this.bleManager.readActivityList(range).then((response: FitActivityListInfo[]) => {
+            this.bleManager.activityService.readActivityList(range).then((response: FitActivityListInfo[]) => {
               console.log(`读取活动列表 response:${JSON.stringify(response)} `)
               //提示写入成功
               promptAction.showToast({message:'读取活动列表 成功'})
@@ -224,7 +224,7 @@ struct ClientDetail {
               fileIndexEnd: 1
             })
 
-            this.bleManager.readActivityFitFile(1065435805).then((response: FileDownloadResult) => {
+            this.bleManager.activityService.readActivityFitFile(1065435805).then((response: FileDownloadResult) => {
               console.log(`读取活动fit文件 response:${JSON.stringify(response.fileInfo)}, ${response.file.length} `)
               //提示写入成功
               promptAction.showToast({message:'读取活动fit文件 成功'})
@@ -241,7 +241,7 @@ struct ClientDetail {
         //读取自动配置
         Row() {
           Button('读取自动配置').onClick(() => {
-            this.bleManager.readAutomaticSetting().then((response: config.Iauto_set_msg[]) => {
+            this.bleManager.configService.readAutomaticSetting().then((response: config.Iauto_set_msg[]) => {
               console.log(`读取自动配置 response:${JSON.stringify(response)} `)
               //提示写入成功
               promptAction.showToast({message:'读取自动配置 成功'})
@@ -258,7 +258,7 @@ struct ClientDetail {
         //写入自动配置
         Row() {
           Button('写入自动配置').onClick(() => {
-            this.bleManager.writeAutomaticSetting(
+            this.bleManager.configService.writeAutomaticSetting(
               config.auto_set_msg.create({
                 status: 1,
                 autoType: config.AUTO_TYPE.enum_SLEEP
@@ -284,7 +284,7 @@ struct ClientDetail {
         //读取传感器列表
         Row() {
           Button('读取传感器列表').onClick(() => {
-            this.bleManager.readSensorList().then((response: sensor.Isensor_data_message[]) => {
+            this.bleManager.sensorService.readSensorList().then((response: sensor.Isensor_data_message[]) => {
               console.log(`读取传感器列表 response:${JSON.stringify(response)} `)
               //提示写入成功
               promptAction.showToast({message:'读取传感器列表 成功'})
@@ -301,7 +301,7 @@ struct ClientDetail {
         //连接指定传感器
         Row() {
           Button('连接指定传感器').onClick(() => {
-            this.bleManager.connectSensor(
+            this.bleManager.sensorService.connectSensor(
               sensor.sensor_data_message.create({
                 sensorType: sensor.SENSOR_TYPE.enum_SENSOR_TYPE_SPD,
                 sensorRadioType: sensor.SENSOR_RADIO_TYPE.enum_SENSOR_RADIO_TYPE_ANT,

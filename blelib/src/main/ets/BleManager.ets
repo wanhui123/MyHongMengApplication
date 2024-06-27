@@ -16,6 +16,9 @@ import { DeviceConnectStatus } from './data/DeviceConnectStatus'
 import Observable from './utils/Observable'
 import { ArrayBufferUtil } from './utils/ArrayBufferUtil'
 import { sensor } from './proto/sensor'
+import { ConfigService } from './services/ConfigService'
+import { SensorService } from './services/SensorService'
+import { ActivityService } from './services/ActivityService'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -42,6 +45,15 @@ const BATTERY_SERVICE_UUID = "0000180F-0000-1000-8000-00805F9B34FB"
 const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
  class BleManager{
+
+   //同步活动相关
+  activityService = new ActivityService(this)
+  //传感器相关
+  sensorService = new SensorService(this)
+  //配置相关
+  configService = new ConfigService(this);
+
+
   private commandManager: BleCommandManager;
 
    //Gatt 客户端设备实例
@@ -424,7 +436,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  private async writeUartRXCharacteristic(data: ArrayBuffer, isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null): Promise<ArrayBuffer> {
+  async writeUartRXCharacteristic(data: ArrayBuffer, isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null): Promise<ArrayBuffer> {
     const command = new BleCommand(this.gattClientDevice, UART_SERVICE_UUID, UART_RX_Characteristic_UUID, data);
     command.isReceiveFinish = isReceiveFinish
     this.addCommand(1, command);
@@ -446,7 +458,7 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  private async writeThirdUartRXCharacteristic(data: ArrayBuffer, isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null): Promise<ArrayBuffer> {
+  async writeThirdUartRXCharacteristic(data: ArrayBuffer, isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null): Promise<ArrayBuffer> {
     const command = new BleCommand(this.gattClientDevice, THIRD_UART_SERVICE_UUID, THIRD_UART_RX_CHARACTERISTIC_UUID, data);
     command.isReceiveFinish = isReceiveFinish
     this.addCommand(3, command);
@@ -845,145 +857,6 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
     const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
     return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
   }
-
-  //设置传感器
-  async setSensor(sensorDataMsg: sensor.sensor_data_message): Promise<boolean> {
-    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
-    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_SET
-    const commandTag = "setSensor"
-
-    const msg = sensor.sensor_message.create({
-      serviceType: commandServiceType,
-      sensorOperateType: commandOperateType,
-      sensorDataMsg:[sensorDataMsg]
-    })
-
-    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandServiceType)
-      .setMainOperationByte(commandOperateType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandServiceType
-        && completeCommand.mainOperation === commandOperateType
-    }
-
-    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
-  }
-
-  //功率校准
-  async sensorPowerCalibration(): Promise<boolean> {
-    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
-    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_POW_CALIB
-    const commandTag = "sensorPowerCalibration"
-
-    const msg = sensor.sensor_message.create({
-      serviceType: commandServiceType,
-      sensorOperateType: commandOperateType,
-    })
-
-    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandServiceType)
-      .setMainOperationByte(commandOperateType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandServiceType
-        && completeCommand.mainOperation === commandOperateType
-    }
-
-    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
-  }
-
-  //忽略传感器
-  async deleteSensor(sensorDataMsg: sensor.sensor_data_message): Promise<boolean> {
-    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
-    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_DEL
-    const commandTag = "deleteSensor"
-
-    const msg = sensor.sensor_message.create({
-      serviceType: commandServiceType,
-      sensorOperateType: commandOperateType,
-      sensorDataMsg:[sensorDataMsg]
-    })
-
-    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandServiceType)
-      .setMainOperationByte(commandOperateType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandServiceType
-        && completeCommand.mainOperation === commandOperateType
-    }
-
-    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
-  }
-
-  //退出传感器设置界面
-  async exitSensorPage() {
-    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
-    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_EXIT
-    const commandTag = "exitSensorPage"
-
-    const msg = sensor.sensor_message.create({
-      serviceType: commandServiceType,
-      sensorOperateType: commandOperateType,
-    })
-
-    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandServiceType)
-      .setMainOperationByte(commandOperateType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandServiceType
-        && completeCommand.mainOperation === commandOperateType
-    }
-
-    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
-  }
-
 
 }
 
