@@ -847,23 +847,141 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   }
 
   //设置传感器
-  async setSensor() {
+  async setSensor(sensorDataMsg: sensor.sensor_data_message): Promise<boolean> {
+    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
+    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_SET
+    const commandTag = "setSensor"
 
+    const msg = sensor.sensor_message.create({
+      serviceType: commandServiceType,
+      sensorOperateType: commandOperateType,
+      sensorDataMsg:[sensorDataMsg]
+    })
+
+    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(commandServiceType)
+      .setMainOperationByte(commandOperateType)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === commandServiceType
+        && completeCommand.mainOperation === commandOperateType
+    }
+
+    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
   }
 
   //功率校准
-  async sensorPowerCalibration() {
+  async sensorPowerCalibration(): Promise<boolean> {
+    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
+    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_POW_CALIB
+    const commandTag = "sensorPowerCalibration"
 
+    const msg = sensor.sensor_message.create({
+      serviceType: commandServiceType,
+      sensorOperateType: commandOperateType,
+    })
+
+    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(commandServiceType)
+      .setMainOperationByte(commandOperateType)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === commandServiceType
+        && completeCommand.mainOperation === commandOperateType
+    }
+
+    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
   }
 
   //忽略传感器
-  async deleteSensor() {
+  async deleteSensor(sensorDataMsg: sensor.sensor_data_message): Promise<boolean> {
+    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
+    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_DEL
+    const commandTag = "deleteSensor"
 
+    const msg = sensor.sensor_message.create({
+      serviceType: commandServiceType,
+      sensorOperateType: commandOperateType,
+      sensorDataMsg:[sensorDataMsg]
+    })
+
+    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(commandServiceType)
+      .setMainOperationByte(commandOperateType)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === commandServiceType
+        && completeCommand.mainOperation === commandOperateType
+    }
+
+    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
   }
 
   //退出传感器设置界面
   async exitSensorPage() {
+    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
+    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_EXIT
+    const commandTag = "exitSensorPage"
 
+    const msg = sensor.sensor_message.create({
+      serviceType: commandServiceType,
+      sensorOperateType: commandOperateType,
+    })
+
+    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
+
+    const headByteArray = new Head20BytesInfo()
+      .setMainServiceType(commandServiceType)
+      .setMainOperationByte(commandOperateType)
+      .setPbDataBytes(sendPbBytes)
+      .confirmCommandByteArray()
+
+    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return completeCommand.mainService === commandServiceType
+        && completeCommand.mainOperation === commandOperateType
+    }
+
+    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
   }
 
 
