@@ -565,298 +565,298 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
 
   //-------------------------------------------  配置 相关命令 -----------------------------------------
   //写入声音配置
-  writeSoundSetting(soundSetMsg: config.sound_set_msg): Promise<ArrayBuffer> {
-    const configMsg = config.config_msg.create({
-      serviceType: common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG,
-      configSeviceType:config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND,
-      configOperateType: config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET,
-      soundSetMessage: [soundSetMsg]
-    })
-    const sendPbBytes = config.config_msg.encode(configMsg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG)
-      .setMainOperationByte(config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET)
-      .setSecondServiceByte(config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
-        && completeCommand.mainOperation === config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET
-        && completeCommand.secondService === config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND;
-    }
-
-    return this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-  }
-
-  /**
-   * 读取自动配置
-   */
-  async readAutomaticSetting(): Promise<config.Iauto_set_msg[]> {
-    const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
-    const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_AUTO
-    const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_GET
-    const commandTag = "readAutomaticSetting"
-
-    const configMsg = config.config_msg.create({
-      serviceType: commandMainServiceType,
-      configSeviceType:configServiceType,
-      configOperateType: configOperateType,
-    })
-    const sendPbBytes = config.config_msg.encode(configMsg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandMainServiceType)
-      .setMainOperationByte(configOperateType)
-      .setSecondServiceByte(configServiceType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandMainServiceType
-        && completeCommand.secondService === configServiceType
-        && completeCommand.mainOperation === configOperateType
-    }
-
-    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    const responseData:config.Iauto_set_msg[] = config.config_msg.decode(new Uint8Array(responseBytes)).autoSetMessage
-    return responseData
-
-  }
-
-  /**
-   * 写入自动配置
-   */
-  async writeAutomaticSetting(...configs: config.auto_set_msg[]): Promise<boolean> {
-    const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
-    const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_AUTO
-    const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET
-    const commandTag = "writeAutomaticSetting"
-
-    const configMsg = config.config_msg.create({
-      serviceType: commandMainServiceType,
-      configSeviceType:configServiceType,
-      configOperateType: configOperateType,
-      autoSetMessage: configs,
-    })
-    const sendPbBytes = config.config_msg.encode(configMsg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandMainServiceType)
-      .setMainOperationByte(configOperateType)
-      .setSecondServiceByte(configServiceType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandMainServiceType
-        && completeCommand.secondService === configServiceType
-        && completeCommand.mainOperation === configOperateType
-    }
-
-    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
-  }
-
-  //-------------------------------------------  活动 相关命令 -----------------------------------------
-
-   //读取活动列表信息
-  async readActivityListInformation(): Promise<common.Ifile_list_get_message|undefined|null> {
-    const msg = cycling_data.cycling_data_msg.create({
-      serviceType: common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA,
-      cyclingDataOperateType: cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET,
-    })
-    const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA)
-      .setMainOperationByte(cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
-        && completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET;
-    }
-
-    const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    const responseData:common.Ifile_list_get_message|undefined|null = cycling_data.cycling_data_msg.decode(new Uint8Array(responseBytes)).listMsg
-    return responseData
-  }
-
-  //读取活动列表
-  async readActivityList(range: common.file_list_get_message | null = null): Promise<FitActivityListInfo[]> {
-    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
-    const commandOperateType = cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_GET
-    const commandTag = "readActivityList"
-
-    const msg = cycling_data.cycling_data_msg.create({
-      serviceType: commandServiceType,
-      cyclingDataOperateType: commandOperateType,
-      listMsg: range
-    })
-    const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandServiceType)
-      .setMainOperationByte(commandOperateType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandServiceType
-        && (completeCommand.mainOperation === commandOperateType
-          || completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_SEND);
-    }
-
-    const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    const responseData = FitUtil.parseActivityList(responseBytes)
-    return responseData
-  }
-
-  //获取某一条活动FIT文件
-  async readActivityFitFile(id: number): Promise<FileDownloadResult> {
-    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
-    const commandOperateType = cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_FILE_GET
-    const commandTag = "readActivityFitFile"
-
-    const msg = cycling_data.cycling_data_msg.create({
-      serviceType: commandServiceType,
-      cyclingDataOperateType: commandOperateType,
-      cyclingDataFileFlagMsg: [
-        cycling_data.cycling_data_file_flag_message.create({
-          timestamp: id
-        })
-      ]
-    })
-    const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandServiceType)
-      .setMainOperationByte(commandOperateType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-    let head = new TransmitCompleteCommand(headByteArray.buffer as ArrayBuffer).getByteArray()
-    head[3] = 0x55 //获取文件标识（文件上传或者文件下载需要）
-
-    const sendData = HexUtil.byteMerger(BaseHeaderData.updateCRC(head), sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandServiceType
-        && completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_FILE_SEND;
-    }
-
-    const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    const responseData = FileUtil.getFileInfoAndFile(responseBytes)
-    return responseData
-  }
-
-  //-------------------------------------------  传感器 相关命令 -----------------------------------------
-
-  //读取传感器列表
-  async readSensorList():Promise<sensor.Isensor_data_message[]> {
-    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
-    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_GET
-    const commandTag = "readSensorList"
-
-    const msg = sensor.sensor_message.create({
-      serviceType: commandServiceType,
-      sensorOperateType: commandOperateType
-    })
-
-    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandServiceType)
-      .setMainOperationByte(commandOperateType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandServiceType
-        && completeCommand.mainOperation === sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_SEND
-    }
-
-    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    const responseData:sensor.Isensor_data_message[] = sensor.sensor_message.decode(new Uint8Array(responseBytes)).sensorDataMsg
-    return responseData
-  }
-
-  //连接指定传感器
-  async connectSensor(sensorDataMsg: sensor.sensor_data_message): Promise<boolean> {
-    const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
-    const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_CONNECT
-    const commandTag = "connectSensor"
-
-    const msg = sensor.sensor_message.create({
-      serviceType: commandServiceType,
-      sensorOperateType: commandOperateType,
-      sensorDataMsg:[sensorDataMsg]
-    })
-
-    const sendPbBytes = sensor.sensor_message.encode(msg).finish()
-
-    const headByteArray = new Head20BytesInfo()
-      .setMainServiceType(commandServiceType)
-      .setMainOperationByte(commandOperateType)
-      .setPbDataBytes(sendPbBytes)
-      .confirmCommandByteArray()
-
-    const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
-
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
-      }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return completeCommand.mainService === commandServiceType
-        && completeCommand.mainOperation === commandOperateType
-    }
-
-    const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
-    return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
-  }
+  // writeSoundSetting(soundSetMsg: config.sound_set_msg): Promise<ArrayBuffer> {
+  //   const configMsg = config.config_msg.create({
+  //     serviceType: common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG,
+  //     configSeviceType:config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND,
+  //     configOperateType: config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET,
+  //     soundSetMessage: [soundSetMsg]
+  //   })
+  //   const sendPbBytes = config.config_msg.encode(configMsg).finish()
+  //
+  //   const headByteArray = new Head20BytesInfo()
+  //     .setMainServiceType(common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG)
+  //     .setMainOperationByte(config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET)
+  //     .setSecondServiceByte(config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND)
+  //     .setPbDataBytes(sendPbBytes)
+  //     .confirmCommandByteArray()
+  //
+  //   const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
+  //
+  //   const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+  //     if (!checkData) {
+  //       return false
+  //     }
+  //     const completeCommand = new TransmitCompleteCommand(checkData)
+  //     return completeCommand.mainService === common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
+  //       && completeCommand.mainOperation === config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET
+  //       && completeCommand.secondService === config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_SOUND;
+  //   }
+  //
+  //   return this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+  // }
+  //
+  // /**
+  //  * 读取自动配置
+  //  */
+  // async readAutomaticSetting(): Promise<config.Iauto_set_msg[]> {
+  //   const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
+  //   const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_AUTO
+  //   const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_GET
+  //   const commandTag = "readAutomaticSetting"
+  //
+  //   const configMsg = config.config_msg.create({
+  //     serviceType: commandMainServiceType,
+  //     configSeviceType:configServiceType,
+  //     configOperateType: configOperateType,
+  //   })
+  //   const sendPbBytes = config.config_msg.encode(configMsg).finish()
+  //
+  //   const headByteArray = new Head20BytesInfo()
+  //     .setMainServiceType(commandMainServiceType)
+  //     .setMainOperationByte(configOperateType)
+  //     .setSecondServiceByte(configServiceType)
+  //     .setPbDataBytes(sendPbBytes)
+  //     .confirmCommandByteArray()
+  //
+  //   const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
+  //
+  //   const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+  //     if (!checkData) {
+  //       return false
+  //     }
+  //     const completeCommand = new TransmitCompleteCommand(checkData)
+  //     return completeCommand.mainService === commandMainServiceType
+  //       && completeCommand.secondService === configServiceType
+  //       && completeCommand.mainOperation === configOperateType
+  //   }
+  //
+  //   const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+  //   const responseData:config.Iauto_set_msg[] = config.config_msg.decode(new Uint8Array(responseBytes)).autoSetMessage
+  //   return responseData
+  //
+  // }
+  //
+  // /**
+  //  * 写入自动配置
+  //  */
+  // async writeAutomaticSetting(...configs: config.auto_set_msg[]): Promise<boolean> {
+  //   const commandMainServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CONFIG
+  //   const configServiceType = config.CONFIG_SERVICE_TYPE.enum_CONFIG_SERVICE_TYPE_AUTO
+  //   const configOperateType = config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SET
+  //   const commandTag = "writeAutomaticSetting"
+  //
+  //   const configMsg = config.config_msg.create({
+  //     serviceType: commandMainServiceType,
+  //     configSeviceType:configServiceType,
+  //     configOperateType: configOperateType,
+  //     autoSetMessage: configs,
+  //   })
+  //   const sendPbBytes = config.config_msg.encode(configMsg).finish()
+  //
+  //   const headByteArray = new Head20BytesInfo()
+  //     .setMainServiceType(commandMainServiceType)
+  //     .setMainOperationByte(configOperateType)
+  //     .setSecondServiceByte(configServiceType)
+  //     .setPbDataBytes(sendPbBytes)
+  //     .confirmCommandByteArray()
+  //
+  //   const sendData = HexUtil.byteMerger(headByteArray,sendPbBytes)
+  //
+  //   const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+  //     if (!checkData) {
+  //       return false
+  //     }
+  //     const completeCommand = new TransmitCompleteCommand(checkData)
+  //     return completeCommand.mainService === commandMainServiceType
+  //       && completeCommand.secondService === configServiceType
+  //       && completeCommand.mainOperation === configOperateType
+  //   }
+  //
+  //   const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+  //   return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
+  // }
+  //
+  // //-------------------------------------------  活动 相关命令 -----------------------------------------
+  //
+  //  //读取活动列表信息
+  // async readActivityListInformation(): Promise<common.Ifile_list_get_message|undefined|null> {
+  //   const msg = cycling_data.cycling_data_msg.create({
+  //     serviceType: common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA,
+  //     cyclingDataOperateType: cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET,
+  //   })
+  //   const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
+  //
+  //   const headByteArray = new Head20BytesInfo()
+  //     .setMainServiceType(common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA)
+  //     .setMainOperationByte(cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET)
+  //     .setPbDataBytes(sendPbBytes)
+  //     .confirmCommandByteArray()
+  //
+  //   const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+  //
+  //   const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+  //     if (!checkData) {
+  //       return false
+  //     }
+  //     const completeCommand = new TransmitCompleteCommand(checkData)
+  //     return completeCommand.mainService === common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
+  //       && completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_NUM_GET;
+  //   }
+  //
+  //   const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+  //   const responseData:common.Ifile_list_get_message|undefined|null = cycling_data.cycling_data_msg.decode(new Uint8Array(responseBytes)).listMsg
+  //   return responseData
+  // }
+  //
+  // //读取活动列表
+  // async readActivityList(range: common.file_list_get_message | null = null): Promise<FitActivityListInfo[]> {
+  //   const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
+  //   const commandOperateType = cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_GET
+  //   const commandTag = "readActivityList"
+  //
+  //   const msg = cycling_data.cycling_data_msg.create({
+  //     serviceType: commandServiceType,
+  //     cyclingDataOperateType: commandOperateType,
+  //     listMsg: range
+  //   })
+  //   const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
+  //
+  //   const headByteArray = new Head20BytesInfo()
+  //     .setMainServiceType(commandServiceType)
+  //     .setMainOperationByte(commandOperateType)
+  //     .setPbDataBytes(sendPbBytes)
+  //     .confirmCommandByteArray()
+  //
+  //   const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+  //
+  //   const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+  //     if (!checkData) {
+  //       return false
+  //     }
+  //     const completeCommand = new TransmitCompleteCommand(checkData)
+  //     return completeCommand.mainService === commandServiceType
+  //       && (completeCommand.mainOperation === commandOperateType
+  //         || completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_LIST_SEND);
+  //   }
+  //
+  //   const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+  //   const responseData = FitUtil.parseActivityList(responseBytes)
+  //   return responseData
+  // }
+  //
+  // //获取某一条活动FIT文件
+  // async readActivityFitFile(id: number): Promise<FileDownloadResult> {
+  //   const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_CYCLING_DATA
+  //   const commandOperateType = cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_FILE_GET
+  //   const commandTag = "readActivityFitFile"
+  //
+  //   const msg = cycling_data.cycling_data_msg.create({
+  //     serviceType: commandServiceType,
+  //     cyclingDataOperateType: commandOperateType,
+  //     cyclingDataFileFlagMsg: [
+  //       cycling_data.cycling_data_file_flag_message.create({
+  //         timestamp: id
+  //       })
+  //     ]
+  //   })
+  //   const sendPbBytes = cycling_data.cycling_data_msg.encode(msg).finish()
+  //
+  //   const headByteArray = new Head20BytesInfo()
+  //     .setMainServiceType(commandServiceType)
+  //     .setMainOperationByte(commandOperateType)
+  //     .setPbDataBytes(sendPbBytes)
+  //     .confirmCommandByteArray()
+  //   let head = new TransmitCompleteCommand(headByteArray.buffer as ArrayBuffer).getByteArray()
+  //   head[3] = 0x55 //获取文件标识（文件上传或者文件下载需要）
+  //
+  //   const sendData = HexUtil.byteMerger(BaseHeaderData.updateCRC(head), sendPbBytes)
+  //
+  //   const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+  //     if (!checkData) {
+  //       return false
+  //     }
+  //     const completeCommand = new TransmitCompleteCommand(checkData)
+  //     return completeCommand.mainService === commandServiceType
+  //       && completeCommand.mainOperation === cycling_data.CYCLING_DATA_OPERATE_TYPE.enum_CYCLING_DATA_OPERATE_TYPE_FILE_SEND;
+  //   }
+  //
+  //   const responseBytes = await this.writeThirdUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+  //   const responseData = FileUtil.getFileInfoAndFile(responseBytes)
+  //   return responseData
+  // }
+  //
+  // //-------------------------------------------  传感器 相关命令 -----------------------------------------
+  //
+  // //读取传感器列表
+  // async readSensorList():Promise<sensor.Isensor_data_message[]> {
+  //   const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
+  //   const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_GET
+  //   const commandTag = "readSensorList"
+  //
+  //   const msg = sensor.sensor_message.create({
+  //     serviceType: commandServiceType,
+  //     sensorOperateType: commandOperateType
+  //   })
+  //
+  //   const sendPbBytes = sensor.sensor_message.encode(msg).finish()
+  //
+  //   const headByteArray = new Head20BytesInfo()
+  //     .setMainServiceType(commandServiceType)
+  //     .setMainOperationByte(commandOperateType)
+  //     .setPbDataBytes(sendPbBytes)
+  //     .confirmCommandByteArray()
+  //
+  //   const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+  //
+  //   const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+  //     if (!checkData) {
+  //       return false
+  //     }
+  //     const completeCommand = new TransmitCompleteCommand(checkData)
+  //     return completeCommand.mainService === commandServiceType
+  //       && completeCommand.mainOperation === sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_SEND
+  //   }
+  //
+  //   const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+  //   const responseData:sensor.Isensor_data_message[] = sensor.sensor_message.decode(new Uint8Array(responseBytes)).sensorDataMsg
+  //   return responseData
+  // }
+  //
+  // //连接指定传感器
+  // async connectSensor(sensorDataMsg: sensor.sensor_data_message): Promise<boolean> {
+  //   const commandServiceType = common.service_type_index.enum_SERVICE_TYPE_INDEX_SENSOR
+  //   const commandOperateType = sensor.SENSOR_OPERATE_TYPE.enum_SENSOR_OPERATE_TYPE_CONNECT
+  //   const commandTag = "connectSensor"
+  //
+  //   const msg = sensor.sensor_message.create({
+  //     serviceType: commandServiceType,
+  //     sensorOperateType: commandOperateType,
+  //     sensorDataMsg:[sensorDataMsg]
+  //   })
+  //
+  //   const sendPbBytes = sensor.sensor_message.encode(msg).finish()
+  //
+  //   const headByteArray = new Head20BytesInfo()
+  //     .setMainServiceType(commandServiceType)
+  //     .setMainOperationByte(commandOperateType)
+  //     .setPbDataBytes(sendPbBytes)
+  //     .confirmCommandByteArray()
+  //
+  //   const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
+  //
+  //   const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+  //     if (!checkData) {
+  //       return false
+  //     }
+  //     const completeCommand = new TransmitCompleteCommand(checkData)
+  //     return completeCommand.mainService === commandServiceType
+  //       && completeCommand.mainOperation === commandOperateType
+  //   }
+  //
+  //   const responseBytes = await this.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
+  //   return ArrayBufferUtil.isCommandStatusSuccess(responseBytes) ?? false
+  // }
 
 }
 

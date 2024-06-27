@@ -125,8 +125,8 @@ struct ClientDetail {
             //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 6A 03 FF 01 FF FF 00 0A A8 01 FF FF FF FF FF FF FF FF F9 08 6A 10 01 18 03 62 02 08 40")//VS1800 自定义模式设置
             //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F F4 01 FF FF FF FF FF FF FF FF E7 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 01")
             console.log(`UART RX Characteristic write start responseData `)
-            this.bleManager.configService.writeSoundSetting(soundSetMsg).then((response: ArrayBuffer) => {
-              console.log(`UART RX Characteristic write end response:${Utils.arrayBufferToHex(response)} `)
+            this.bleManager.configService.writeSoundSetting(soundSetMsg).then((response: Boolean) => {
+              console.log(`UART RX Characteristic write end response:${response} `)
               //提示写入成功
               promptAction.showToast({message:'写入成功'})
             }).catch((error:Error) => {
@@ -159,10 +159,8 @@ struct ClientDetail {
               status: 0//0--关  1--开
             })
 
-            //let data = Utils.hexStringWithoutSpacesToArrayBuffer("01 0C 11 FF 01 FF FF 00 0F AA 01 FF FF FF FF FF FF FF FF 32 08 0C 10 11 18 01 CA 01 06 08 20 10 01 18 00")
-            this.bleManager.configService.writeSoundSetting(soundSetMsg).then((response: ArrayBuffer) => {
-              //console.log('UART RX Characteristic write successful');
-              console.log(`UART RX Characteristic write end response:${Utils.arrayBufferToHex(response)} `)
+            this.bleManager.configService.writeSoundSetting(soundSetMsg).then((response: Boolean) => {
+              console.log(`UART RX Characteristic write end response:${response} `)
               //提示写入成功
               promptAction.showToast({message:'写入成功'})
             }).catch((error:Error) => {
@@ -315,6 +313,23 @@ struct ClientDetail {
               console.error('连接指定传感器 failed:', error.message);
               //提示写入失败
               promptAction.showToast({message:'连接指定传感器 失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
+        //读取页面配置信息
+        Row() {
+          Button('读取页面配置信息').onClick(() => {
+            this.bleManager.configService.readPage(0).then((response: config.Ipage_msg[]) => {
+              console.log(`读取页面配置信息 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'读取页面配置信息 成功'})
+            }).catch((error:Error) => {
+              console.error('读取页面配置信息 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'读取页面配置信息 失败'})
             })
           })
             .type(ButtonType.Normal)
