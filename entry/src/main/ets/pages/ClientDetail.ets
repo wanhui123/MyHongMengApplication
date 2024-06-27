@@ -3,7 +3,7 @@ import { promptAction, router } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import Utils from '../utils/Util';
 
-import { BleManager, common, config } from '@ohos/blebib'
+import { BleManager, common, config, sensor } from '@ohos/blebib'
 import { FitActivityListInfo } from '@ohos/blebib/src/main/ets/data/FitActivityListInfo';
 import { FileDownloadResult } from '@ohos/blebib/src/main/ets/utils/FileUtil';
 import { DeviceConnectStatus } from '@ohos/blebib/src/main/ets/data/DeviceConnectStatus';
@@ -275,6 +275,46 @@ struct ClientDetail {
               console.error('写入自动配置 failed:', error.message);
               //提示写入失败
               promptAction.showToast({message:'写入自动配置 失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
+        //读取传感器列表
+        Row() {
+          Button('读取传感器列表').onClick(() => {
+            this.bleManager.readSensorList().then((response: sensor.Isensor_data_message[]) => {
+              console.log(`读取传感器列表 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'读取传感器列表 成功'})
+            }).catch((error:Error) => {
+              console.error('读取传感器列表 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'读取传感器列表 失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
+        //连接指定传感器
+        Row() {
+          Button('连接指定传感器').onClick(() => {
+            this.bleManager.connectSensor(
+              sensor.sensor_data_message.create({
+                sensorType: sensor.SENSOR_TYPE.enum_SENSOR_TYPE_SPD,
+                sensorRadioType: sensor.SENSOR_RADIO_TYPE.enum_SENSOR_RADIO_TYPE_ANT,
+                sensorKey: "55606"
+              })
+            ).then((response: boolean) => {
+              console.log(`连接指定传感器 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'连接指定传感器 成功'})
+            }).catch((error:Error) => {
+              console.error('连接指定传感器 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'连接指定传感器 失败'})
             })
           })
             .type(ButtonType.Normal)
