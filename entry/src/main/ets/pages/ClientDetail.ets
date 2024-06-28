@@ -336,6 +336,23 @@ struct ClientDetail {
             .width('100%')
         }
 
+        //读取公英制配置信息
+        Row() {
+          Button('读取公英制配置信息').onClick(() => {
+            this.bleManager.configService.readUnit().then((response: config.Iunit_msg[]) => {
+              console.log(`读取公英制配置信息 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'读取公英制配置信息 成功'})
+            }).catch((error:Error) => {
+              console.error('读取公英制配置信息 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'读取公英制配置信息 失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
         //读取固件版本
         Row() {
           Button('读取固件版本').onClick(() => {

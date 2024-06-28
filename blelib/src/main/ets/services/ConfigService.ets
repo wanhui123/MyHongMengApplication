@@ -17,7 +17,8 @@ export class ConfigService {
     commandMainServiceType: number,
     configServiceType: number,
     configOperateType: number,
-    configMsg: config.config_msg
+    configMsg: config.config_msg,
+    isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null = null
   ): Promise<ArrayBuffer> {
     const sendPbBytes = config.config_msg.encode(configMsg).finish()
 
@@ -30,17 +31,20 @@ export class ConfigService {
 
     const sendData = HexUtil.byteMerger(headByteArray, sendPbBytes)
 
-    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
-      if (!checkData) {
-        return false
+    if (isReceiveFinish == null) {
+      isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+        if (!checkData) {
+          return false
+        }
+        const completeCommand = new TransmitCompleteCommand(checkData)
+        return (
+          completeCommand.mainService === commandMainServiceType &&
+            completeCommand.mainOperation === configOperateType &&
+            completeCommand.secondService === configServiceType
+        )
       }
-      const completeCommand = new TransmitCompleteCommand(checkData)
-      return (
-        completeCommand.mainService === commandMainServiceType &&
-          completeCommand.mainOperation === configOperateType &&
-          completeCommand.secondService === configServiceType
-      )
     }
+
 
     return await this.deviceBleManager.writeUartRXCharacteristic(sendData.buffer as ArrayBuffer, isReceiveFinish)
   }
@@ -200,7 +204,19 @@ export class ConfigService {
       configOperateType: configOperateType,
     })
 
-    const responseBytes = await this.sendConfigCommand(commandMainServiceType, configServiceType, configOperateType, configMsg)
+    const isReceiveFinish = (checkData: ArrayBuffer | null, storedData: Uint8Array) => {
+      if (!checkData) {
+        return false
+      }
+      const completeCommand = new TransmitCompleteCommand(checkData)
+      return (
+        completeCommand.mainService === commandMainServiceType &&
+          completeCommand.mainOperation === config.CONFIG_OPERATE_TYPE.enum_CONFIG_OPERATE_TYPE_SEND &&
+          completeCommand.secondService === configServiceType
+      )
+    }
+
+    const responseBytes = await this.sendConfigCommand(commandMainServiceType, configServiceType, configOperateType, configMsg, isReceiveFinish)
     return config.config_msg.decode(new Uint8Array(responseBytes)).unitMessage
   }
 
