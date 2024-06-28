@@ -3,7 +3,7 @@ import { promptAction, router } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import Utils from '../utils/Util';
 
-import { BleManager, common, config, sensor } from '@ohos/blebib'
+import { BleManager, common, config, sensor, firmware } from '@ohos/blebib'
 import { FitActivityListInfo } from '@ohos/blebib/src/main/ets/data/FitActivityListInfo';
 import { FileDownloadResult } from '@ohos/blebib/src/main/ets/utils/FileUtil';
 import { DeviceConnectStatus } from '@ohos/blebib/src/main/ets/data/DeviceConnectStatus';
@@ -330,6 +330,23 @@ struct ClientDetail {
               console.error('读取页面配置信息 failed:', error.message);
               //提示写入失败
               promptAction.showToast({message:'读取页面配置信息 失败'})
+            })
+          })
+            .type(ButtonType.Normal)
+            .width('100%')
+        }
+
+        //读取固件版本
+        Row() {
+          Button('读取固件版本').onClick(() => {
+            this.bleManager.firmwareService.readFirmwareVersion().then((response: firmware.Ifirmware_data_message | null | undefined) => {
+              console.log(`读取固件版本 response:${JSON.stringify(response)} `)
+              //提示写入成功
+              promptAction.showToast({message:'读取固件版本 成功'})
+            }).catch((error:Error) => {
+              console.error('读取固件版本 failed:', error.message);
+              //提示写入失败
+              promptAction.showToast({message:'读取固件版本 失败'})
             })
           })
             .type(ButtonType.Normal)

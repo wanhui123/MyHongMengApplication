@@ -19,6 +19,7 @@ import { sensor } from './proto/sensor'
 import { ConfigService } from './services/ConfigService'
 import { SensorService } from './services/SensorService'
 import { ActivityService } from './services/ActivityService'
+import { FirmwareService } from './services/FirmwareService'
 
 //通道1
 const UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -52,6 +53,8 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
   sensorService = new SensorService(this)
   //配置相关
   configService = new ConfigService(this);
+  //固件相关(版本、更新)
+  firmwareService = new FirmwareService(this);
 
 
   private commandManager: BleCommandManager;
