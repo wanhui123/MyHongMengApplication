@@ -461,9 +461,14 @@ const BATTERY_LEVEL_CHARACTERISTIC_UUID = "00002A19-0000-1000-8000-00805F9B34FB"
    * @param data 要写入的数据
    * @returns Promise<void>
    */
-  async writeThirdUartRXCharacteristic(data: ArrayBuffer, isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null): Promise<ArrayBuffer> {
+  async writeThirdUartRXCharacteristic(
+    data: ArrayBuffer,
+    isReceiveFinish: ((checkData: ArrayBuffer | null, storedData: Uint8Array) => boolean) | null,
+    retries: number = 0
+  ): Promise<ArrayBuffer> {
     const command = new BleCommand(this.gattClientDevice, THIRD_UART_SERVICE_UUID, THIRD_UART_RX_CHARACTERISTIC_UUID, data);
     command.isReceiveFinish = isReceiveFinish
+    command.setRetries(retries)
     this.addCommand(3, command);
     return command.awaitResponse()
   }
