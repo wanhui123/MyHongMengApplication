@@ -69,6 +69,14 @@ export class BleCommand {
     });
   }
 
+  /**
+   * 设置命令失败后的重试次数
+   * @param retries 新的重试次数
+   */
+  setRetries(retries: number): void {
+    this.retries = retries;
+  }
+
   fail(error: object) {
     if (this.reject) {
       this.reject(error);
